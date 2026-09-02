@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block content %}
+    <h1 class="mb-4 text-center">گزارش ساعت کاری</h1>
+    <div class="row">
+        <form class="row g-3">
+            <div class="col-auto">
+                <label for="start" class="visually-hidden">از تاریخ</label>
+                <input type="text" class="form-control" id="start" name="start" placeholder="از تاریخ" value="{{ start }}"
+                       data-jdp>
+            </div>
+            <div class="col-auto">
+                <label for="end" class="visually-hidden">از تاریخ</label>
+                <input type="text" class="form-control" name="end" id="end" placeholder="تا تاریخ" value="{{ end }}" data-jdp>
+            </div>
+            <div class="col-auto">
+                <label for="project_id" class="visually-hidden">پروژه</label>
+                <select class="form-control" id="project_id" name="project_id" required>
+                    <option value="">----</option>
+                    {% for project in project_list %}
+                        <option {% if project.id == project_id|add:"0" %} selected {% endif %}
+                                                                  value="{{ project.id }}">{{ project.name }}</option>
+                    {% endfor %}
+                </select>
+
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-info">فیلتر</button>
+            </div>
+        </form>
+    </div>
+    <h3 class="mt-5">گزارش روزانه</h3>
+    <table class="table text-center">
+        <thead>
+        <tr>
+            <th>#</th>
+            <th>ID</th>
+            <th>تاریخ</th>
+            <th>پروژه</th>
+            <th>مجموع زمان (ساعت)</th>
+            <th>توضیحات</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for entry in daily_report %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ entry.id }}</td>
+                <td class="ltr">{{ entry.entry_time|date:'Y-m-d H:i' }}</td>
+                <td>{{ project.name }}</td>
+                <td>{{ entry.total_duration|default:"0" }}</td>
+                <td>{{ entry.description|default:"-" }}</td>
+            </tr>
+        {% endfor %}
+        <tr>
+            <td></td>
+            <td>جمع ساعت کاری</td>
+            <td class="bold ltr">{{ total_hours }} ساعت</td>
+            <td></td>
+        </tr>
+        </tbody>
+    </table>
+
+    <a href="{% url 'home' %}" class="btn btn-primary">بازگشت به خانه</a>
+    <a href="{% url 'factor' start end  project_id %}" class="btn btn-info">چاپ فاکتور</a>
+{% endblock %}
+
+{% block extra_script %}
+<script>
+    jalaliDatepicker.startWatch({
+        date: true,
+        time: false,
+        separatorChars: {
+            date: "-",
+        }
+    });
+</script>
+{% endblock %}

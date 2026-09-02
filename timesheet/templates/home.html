@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block content %}
+    <h1 class="mb-4 text-center">سیستم ساعت کاری</h1>
+
+    <h3 class="mt-5">ثبت زمان</h3>
+    <form method="post">
+        {% csrf_token %}
+        {{ time_entry_form.as_p }}
+        <button type="submit" class="btn btn-success">ثبت</button>
+    </form>
+
+    <h3 class="mt-5"> ثبت‌های زمان اخیر</h3>
+    <table class="table text-center table-striped">
+        <thead>
+        <tr>
+            <th>#</th>
+            <th>پروژه</th>
+            <th>زمان ورود</th>
+            <th>زمان خروج</th>
+            <th>مدت زمان</th>
+            <th>توضیحات</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for entry in time_entries %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ entry.project.name }}</td>
+                <td class="ltr">{{ entry.entry_time }}</td>
+                <td class="ltr">{{ entry.exit_time|default:"-" }}</td>
+                <td>{{ entry.cal_duration|default:"-" }}</td>
+                <td>{{ entry.description|default:"-" }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <a href="{% url 'report' %}?start={{ start_date }}&end={{ end_date }}" class="btn btn-info">مشاهده گزارش</a>
+{% endblock %}

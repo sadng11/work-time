@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+{% load i18n static %}
+{% block title %}
+    {{ project.name }} | {{ invoice_number|default:"-" }}
+{% endblock %}
+{% block content %}
+    <div class="container my-5 invoice-border">
+        <div class="invoice-container">
+            <div class="invoice-header text-center mb-5">
+                <h3 class="fw-bold mb-0">فاکتور ساعت کاری</h3>
+                <small class="text-muted">شماره فاکتور: {{ invoice_number|default:"-" }}</small>
+            </div>
+
+            <table class="table table-bordered align-middle text-center mb-4">
+                <tbody>
+                <tr>
+                    <th class="bg-light">از تاریخ</th>
+                    <td>{{ start_date }}</td>
+                    <th class="bg-light">تا تاریخ</th>
+                    <td>{{ end_date }}</td>
+                </tr>
+                <tr>
+                    <th class="bg-light">پروژه</th>
+                    <td>{{ project.name }}</td>
+                    <th class="bg-light">کارفرما</th>
+                    <td>{{ project.employer }}</td>
+                </tr>
+                </tbody>
+            </table>
+
+            <table class="table table-bordered text-center mb-4">
+                <thead class="table-light">
+                <tr>
+                    <th>قیمت واحد (تومان)</th>
+                    <th>جمع (ساعت)</th>
+                    <th>مبلغ کل (تومان)</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>{{ base_fee }}</td>
+                    <td>{{ total_hours }} </td>
+                    <td>
+                        <div class="fw-bold">{{ total_fee }}</div>
+                        <div style="font-size: 10px; font-weight: normal;">{{ string_fee }}</div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+
+            <!-- جایگزین بخش توضیحات فعلی -->
+            <div class="invoice-notes mb-5">
+                <h6 class="fw-bold mb-2">توضیحات:</h6>
+
+                <form id="notes-form" method="post">
+                    {% csrf_token %}
+                    <textarea id="invoice-notes-textarea"
+                              name="notes"
+                              class="form-control"
+                              rows="4"
+                              placeholder="">{{ notes|default:"-" }}</textarea>
+
+                    {#                    <div class="mt-2">#}
+                    {#                        <button type="submit" class="btn btn-primary btn-sm">ذخیره</button>#}
+                    {#                        <button type="button" id="notes-save-ajax" class="btn btn-outline-secondary btn-sm ms-2">ذخیره#}
+                    {#                            خودکار (AJAX)#}
+                    {#                        </button>#}
+                    {#                        <span id="notes-status" class="ms-2 text-muted"></span>#}
+                    {#                    </div>#}
+                </form>
+            </div>
+
+
+            <div class="d-flex justify-content-between align-items-center mt-5">
+                <div class="text-end">
+                    <p class="mb-10"><strong>تاریخ صدور:</strong> {{ today|date:"Y/m/d" }}</p>
+                    <p class="mb-0 mt-4"><strong>تنظیم‌کننده:</strong> {{ user.last_name }}</p>
+                </div>
+                <div class="text-end">
+                    <p class="mb-10"><strong>امضا کارفرما:</strong> ..................</p>
+                    <p class="mb-0"><strong>امضا مجری:</strong><img style="width: 100px;" src="{% static 'images/sign.jpg' %}" alt="sign"> </p>
+                </div>
+            </div>
+
+            <div class="text-center mt-4 no-print">
+                <a href="{% url 'home' %}" class="btn btn-secondary px-4">بازگشت به خانه</a>
+                <button class="btn btn-success px-4 ms-2" onclick="window.print()">چاپ فاکتور</button>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_style %}
+    <style>
+        .invoice-container {
+            direction: rtl;
+            background: #fff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.08);
+        }
+
+        .invoice-header h3 {
+            border-bottom: 2px solid #007bff;
+            display: inline-block;
+            padding-bottom: 6px;
+        }
+
+        .invoice-notes p {
+            text-align: justify;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        @media print {
+            @page {
+                size: A5;
+                margin: 10mm;
+                @bottom-center {
+                    content: "صفحه " counter(page) " از " counter(pages);
+                    font-family: IRANSans, 'IRANSans', sans-serif;
+                    font-size: 10pt;
+                    color: #333;
+                }
+                @top-center {
+                    content: "سامانه ساعت کاری";
+                    font-family: IRANSans, 'IRANSans', sans-serif;
+                    font-size: 10pt;
+                    color: #333;
+                }
+            }
+
+            body {
+                direction: rtl;
+                font-family: IRANSans, 'IRANSans', sans-serif;
+                -webkit-print-color-adjust: exact !important;
+                color-adjust: exact !important;
+                background: #fff !important;
+            }
+
+            .invoice-border {
+                border: 3px double #666 !important;
+                border-radius: 10px !important;
+                background: #fff !important;
+                padding: 10px !important;
+                padding-bottom: 20px !important;
+                box-shadow: none !important;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            .invoice-container {
+                box-shadow: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            table {
+                border-collapse: collapse !important;
+            }
+
+            th, td {
+                border: 1px solid #555 !important;
+                padding: 6px !important;
+            }
+
+            .invoice-notes p {
+                border: 1px solid #555 !important;
+                min-height: 60px;
+                padding: 8px !important;
+            }
+
+
+            #invoice-notes-textarea {
+                border: 1px solid #ccc !important;
+                box-shadow: none !important;
+                resize: none !important;
+                outline: none !important;
+                -webkit-appearance: none;
+                line-height: 1.5;
+                white-space: pre-wrap;
+            }
+
+            /* دکمه‌ها را مخفی کن */
+            .no-print, button {
+                display: none !important;
+            }
+        }
+    </style>
+{% endblock %}

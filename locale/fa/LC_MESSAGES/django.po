@@ -1,0 +1,75 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-10-27 10:37+0330\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: timesheet/models.py:9
+msgid "Project name"
+msgstr "نام پروژه"
+
+#: timesheet/models.py:10 timesheet/models.py:25
+msgid "User"
+msgstr "کاربر"
+
+#: timesheet/models.py:11
+msgid "Employer"
+msgstr "کارفرما"
+
+#: timesheet/models.py:12
+msgid "Unit price"
+msgstr "قیمت پایه"
+
+#: timesheet/models.py:19 timesheet/models.py:24
+msgid "Project"
+msgstr "پروژه"
+
+#: timesheet/models.py:20
+msgid "Projects"
+msgstr "پروژه ها"
+
+#: timesheet/models.py:26
+msgid "Entry time"
+msgstr "زمان ورود/خروج"
+
+#: timesheet/models.py:27
+msgid "Exit time"
+msgstr "زمان خروج"
+
+#: timesheet/models.py:28
+msgid "Duration"
+msgstr "مدت زمان"
+
+#: timesheet/models.py:29
+msgid "Description"
+msgstr "توضیحات"
+
+#: timesheet/models.py:53
+msgid "Time Entry"
+msgstr "ورود زمان"
+
+#: timesheet/models.py:54
+msgid "Time Entries"
+msgstr ""
+
+#: work_time/model.py:8
+msgid "Created at"
+msgstr "زمان ایجاد"
+
+#: work_time/model.py:9
+msgid "Deleted at"
+msgstr "زمان حذف"

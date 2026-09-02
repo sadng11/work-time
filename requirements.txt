@@ -1,0 +1,12 @@
+Django
+djangorestframework
+config
+gunicorn
+python-decouple
+jdatetime
+django-jalali
+django-cors-headers
+sentry-sdk
+django-silk
+requests
+num2fawords

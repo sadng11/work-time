@@ -1,0 +1,21 @@
+services:
+  work_time_web:
+    build:
+      context: .
+    container_name: work_time_web
+    command: sh -c "python3 manage.py migrate && python manage.py runserver 0.0.0.0:${LOCAL_PORT}"
+    volumes:
+      - .:/home/app/webapp
+
+    env_file: .env
+    ports:
+      - "${REMOTE_PORT}:${LOCAL_PORT}"
+    restart: "always"
+    networks:
+      - pg-db
+
+networks:
+  pg-db:
+    external: true
+
+
