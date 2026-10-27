@@ -1,19 +1,34 @@
 {% extends 'base.html' %}
-{% block title %}ویرایش سابقه کاری{% endblock %}
+{% load i18n static %}
+
+{% block title %}ویرایش سابقه کاری | سامانه ساعت کاری{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8 col-lg-6">
-        <div class="card shadow-sm border-0 rounded-3">
-            <div class="card-header bg-primary text-white py-3">
-                <h4 class="mb-0 text-center">✏️ ویرایش سابقه کاری</h4>
+<div class="row justify-content-center my-4">
+    <div class="col-md-9 col-lg-7">
+        <div class="app-card shadow-sm">
+            <!-- هدر کارت ویرایش -->
+            <div class="app-card-header bg-white py-3 border-bottom">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="brand-icon-box" style="width: 34px; height: 34px; font-size: 0.95rem;">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                    </span>
+                    <div>
+                        <h2 class="h5 mb-0 fw-bold text-dark">ویرایش سابقه کاری</h2>
+                        <div class="text-muted small">ویرایش اطلاعات زمان ورود و خروج مربوط به پروژه «{{ entry.project.name }}»</div>
+                    </div>
+                </div>
             </div>
-            <div class="card-body p-4">
+
+            <div class="app-card-body p-4">
                 {% if form.non_field_errors %}
-                    <div class="alert alert-danger" role="alert">
-                        {% for error in form.non_field_errors %}
-                            <div>{{ error }}</div>
-                        {% endfor %}
+                    <div class="alert alert-modern alert-danger mb-4" role="alert">
+                        <i class="fa-solid fa-triangle-exclamation fs-5 text-danger"></i>
+                        <div>
+                            {% for error in form.non_field_errors %}
+                                <div class="fw-bold">{{ error }}</div>
+                            {% endfor %}
+                        </div>
                     </div>
                 {% endif %}
 
@@ -21,46 +36,90 @@
                     {% csrf_token %}
 
                     <div class="mb-3">
-                        <label for="{{ form.project.id_for_label }}" class="form-label fw-bold">پروژه</label>
+                        <label for="{{ form.project.id_for_label }}" class="form-label">
+                            <i class="fa-solid fa-folder-open text-muted"></i>
+                            <span>پروژه</span>
+                        </label>
                         {{ form.project }}
                         {% if form.project.errors %}
-                            <div class="text-danger small mt-1">{{ form.project.errors.0 }}</div>
+                            <div class="text-danger small mt-1 d-flex align-items-center gap-1">
+                                <i class="fa-solid fa-circle-exclamation"></i>
+                                <span>{{ form.project.errors.0 }}</span>
+                            </div>
                         {% endif %}
                     </div>
 
                     <div class="mb-3">
-                        <label for="{{ form.entry_time.id_for_label }}" class="form-label fw-bold">زمان شروع (ورود)</label>
+                        <label for="{{ form.entry_time.id_for_label }}" class="form-label">
+                            <i class="fa-regular fa-calendar-check text-muted"></i>
+                            <span>زمان شروع (ورود)</span>
+                        </label>
                         {{ form.entry_time }}
-                        <div class="form-text">برای انتخاب تاریخ و ساعت روی فیلد کلیک کنید.</div>
+                        <div class="form-text small text-muted">برای تنظیم تاریخ و ساعت شروع، روی فیلد کلیک نمایید.</div>
                         {% if form.entry_time.errors %}
-                            <div class="text-danger small mt-1">{{ form.entry_time.errors.0 }}</div>
+                            <div class="text-danger small mt-1 d-flex align-items-center gap-1">
+                                <i class="fa-solid fa-circle-exclamation"></i>
+                                <span>{{ form.entry_time.errors.0 }}</span>
+                            </div>
                         {% endif %}
                     </div>
 
                     <div class="mb-3">
-                        <label for="{{ form.exit_time.id_for_label }}" class="form-label fw-bold">زمان پایان (خروج)</label>
+                        <label for="{{ form.exit_time.id_for_label }}" class="form-label">
+                            <i class="fa-regular fa-calendar-xmark text-muted"></i>
+                            <span>زمان پایان (خروج)</span>
+                        </label>
                         {{ form.exit_time }}
-                        <div class="form-text">اختیاری — در صورت خالی بودن، به عنوان کارکرد جاری در نظر گرفته می‌شود.</div>
+                        <div class="form-text small text-muted">در صورت خالی گذاشتن این فیلد، رکورد به عنوان «در حال انجام» ثبت خواهد ماند.</div>
                         {% if form.exit_time.errors %}
-                            <div class="text-danger small mt-1">{{ form.exit_time.errors.0 }}</div>
+                            <div class="text-danger small mt-1 d-flex align-items-center gap-1">
+                                <i class="fa-solid fa-circle-exclamation"></i>
+                                <span>{{ form.exit_time.errors.0 }}</span>
+                            </div>
                         {% endif %}
                     </div>
 
-                    <div class="mb-3">
-                        <label for="{{ form.description.id_for_label }}" class="form-label fw-bold">توضیحات</label>
+                    <div class="mb-4">
+                        <label for="{{ form.description.id_for_label }}" class="form-label">
+                            <i class="fa-solid fa-align-right text-muted"></i>
+                            <span>توضیحات و جزئیات فعالیت</span>
+                        </label>
                         {{ form.description }}
                         {% if form.description.errors %}
-                            <div class="text-danger small mt-1">{{ form.description.errors.0 }}</div>
+                            <div class="text-danger small mt-1 d-flex align-items-center gap-1">
+                                <i class="fa-solid fa-circle-exclamation"></i>
+                                <span>{{ form.description.errors.0 }}</span>
+                            </div>
                         {% endif %}
                     </div>
 
-                    <div class="d-flex justify-content-between align-items-center mt-4">
-                        <button type="submit" class="btn btn-primary px-4">ذخیره تغییرات</button>
-                        <a href="{% url 'home' %}" class="btn btn-outline-secondary px-4">انصراف و بازگشت</a>
+                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 pt-3 border-top">
+                        <button type="submit" class="btn btn-primary-custom px-4">
+                            <i class="fa-solid fa-check"></i>
+                            <span>ذخیره تغییرات</span>
+                        </button>
+                        <a href="{% url 'home' %}" class="btn btn-secondary-custom px-4">
+                            <i class="fa-solid fa-xmark"></i>
+                            <span>انصراف و بازگشت</span>
+                        </a>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_script %}
+<script>
+    jalaliDatepicker.startWatch({
+        date: true,
+        time: true,
+        separatorChars: {
+            date: "-",
+            between: " ",
+            time: ":"
+        }
+    });
+</script>
 {% endblock %}
