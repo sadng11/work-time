@@ -1,84 +1,227 @@
 {% extends 'base.html' %}
+{% load i18n static %}
+
+{% block title %}گزارش و فیلتر ساعت کاری | سامانه ساعت کاری{% endblock %}
+
 {% block content %}
-    <h1 class="mb-4 text-center">گزارش ساعت کاری</h1>
-    <div class="row">
-        <form class="row g-3">
-            <div class="col-auto">
-                <label for="start" class="visually-hidden">از تاریخ</label>
-                <input type="text" class="form-control" id="start" name="start" placeholder="از تاریخ" value="{{ start }}"
-                       data-jdp>
+<!-- هدر صفحه گزارش -->
+<div class="row align-items-center mb-4">
+    <div class="col-md-8">
+        <h1 class="h3 fw-bold text-dark mb-1">
+            <i class="fa-solid fa-chart-pie text-primary me-2"></i>
+            گزارش و فیلتر کارکرد
+        </h1>
+        <p class="text-muted small mb-0">استخراج مجموع ساعات کاری در بازه زمانی مشخص و صدور پیش‌فاکتور مالی</p>
+    </div>
+    <div class="col-md-4 text-md-start mt-3 mt-md-0">
+        <a href="{% url 'home' %}" class="btn btn-secondary-custom">
+            <i class="fa-solid fa-arrow-right"></i>
+            <span>بازگشت به داشبورد</span>
+        </a>
+    </div>
+</div>
+
+<!-- کارت فیلتر بازه زمانی و پروژه -->
+<div class="app-card mb-4">
+    <div class="app-card-header bg-white">
+        <div class="d-flex align-items-center gap-2">
+            <i class="fa-solid fa-filter text-primary"></i>
+            <h2 class="h6 mb-0 fw-bold">فیلتر بازه تاریخی و پروژه</h2>
+        </div>
+    </div>
+    <div class="app-card-body p-4">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label for="start" class="form-label">
+                    <i class="fa-regular fa-calendar text-muted"></i>
+                    <span>از تاریخ</span>
+                </label>
+                <input type="text" class="form-control" id="start" name="start" placeholder="مثال: 1403-01-01" value="{{ start|default:'' }}" data-jdp autocomplete="off">
             </div>
-            <div class="col-auto">
-                <label for="end" class="visually-hidden">از تاریخ</label>
-                <input type="text" class="form-control" name="end" id="end" placeholder="تا تاریخ" value="{{ end }}" data-jdp>
+
+            <div class="col-md-3">
+                <label for="end" class="form-label">
+                    <i class="fa-regular fa-calendar-check text-muted"></i>
+                    <span>تا تاریخ</span>
+                </label>
+                <input type="text" class="form-control" id="end" name="end" placeholder="مثال: 1403-01-31" value="{{ end|default:'' }}" data-jdp autocomplete="off">
             </div>
-            <div class="col-auto">
-                <label for="project_id" class="visually-hidden">پروژه</label>
-                <select class="form-control" id="project_id" name="project_id" required>
-                    <option value="">----</option>
-                    {% for project in project_list %}
-                        <option {% if project.id == project_id|add:"0" %} selected {% endif %}
-                                                                  value="{{ project.id }}">{{ project.name }}</option>
+
+            <div class="col-md-4">
+                <label for="project_id" class="form-label">
+                    <i class="fa-solid fa-folder-open text-muted"></i>
+                    <span>انتخاب پروژه</span>
+                </label>
+                <select class="form-select" id="project_id" name="project_id">
+                    <option value="">-- همه پروژه‌ها --</option>
+                    {% for p in project_list %}
+                        <option value="{{ p.id }}" {% if p.id == project_id|add:"0" %}selected{% endif %}>
+                            {{ p.name }}
+                        </option>
                     {% endfor %}
                 </select>
-
             </div>
-            <div class="col-auto">
-                <button class="btn btn-info">فیلتر</button>
+
+            <div class="col-md-2 text-start">
+                <button type="submit" class="btn btn-primary-custom w-100">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <span>اعمال فیلتر</span>
+                </button>
             </div>
         </form>
     </div>
-    <h3 class="mt-5">گزارش روزانه</h3>
-    <table class="table text-center">
-        <thead>
-        <tr>
-            <th>#</th>
-            <th>ID</th>
-            <th>تاریخ</th>
-            <th>پروژه</th>
-            <th>مجموع زمان (ساعت)</th>
-            <th>توضیحات</th>
-            <th>عملیات</th>
-        </tr>
-        </thead>
-        <tbody>
-        {% for entry in daily_report %}
-            <tr>
-                <td>{{ forloop.counter }}</td>
-                <td>{{ entry.id }}</td>
-                <td class="ltr">{{ entry.entry_time|date:'Y-m-d H:i' }}</td>
-                <td>{{ project.name }}</td>
-                <td>{{ entry.total_duration|default:"0" }}</td>
-                <td>{{ entry.description|default:"-" }}</td>
-                <td>
-                    <div class="btn-group btn-group-sm" role="group">
-                        <a href="{% url 'edit_time_entry' entry.id %}" class="btn btn-sm btn-outline-primary" title="ویرایش">
-                            ✏️
-                        </a>
-                        <form method="post" action="{% url 'delete_time_entry' entry.id %}" class="d-inline" onsubmit="return confirm('آیا از حذف این رکورد اطمینان دارید؟');">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-sm btn-outline-danger" title="حذف">
-                                🗑️
-                            </button>
-                        </form>
-                    </div>
-                </td>
-            </tr>
-        {% endfor %}
-        <tr>
-            <td></td>
-            <td>جمع ساعت کاری</td>
-            <td class="bold ltr">{{ total_hours }} ساعت</td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-        </tr>
-        </tbody>
-    </table>
+</div>
 
-    <a href="{% url 'home' %}" class="btn btn-primary">بازگشت به خانه</a>
-    <a href="{% url 'factor' start end  project_id %}" class="btn btn-info">چاپ فاکتور</a>
+<!-- ردیف کارت خلاصه آماری مجموع ساعات -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="kpi-card" style="border-right: 4px solid var(--color-primary);">
+            <div class="kpi-icon primary">
+                <i class="fa-solid fa-hourglass-half"></i>
+            </div>
+            <div>
+                <div class="kpi-title">مجموع ساعت کاری فیلترشده</div>
+                <div class="kpi-value text-success ltr text-end">
+                    {{ total_hours }} <span class="fs-6 fw-normal text-muted">ساعت</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="kpi-card">
+            <div class="kpi-icon info">
+                <i class="fa-solid fa-briefcase"></i>
+            </div>
+            <div>
+                <div class="kpi-title">پروژه مورد گزارش</div>
+                <div class="kpi-value fs-6 text-truncate" style="max-width: 220px;" title="{{ project.name|default:'همه پروژه‌ها' }}">
+                    {{ project.name|default:"همه پروژه‌ها" }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="kpi-card">
+            <div class="kpi-icon warning">
+                <i class="fa-regular fa-calendar-days"></i>
+            </div>
+            <div>
+                <div class="kpi-title">بازه زمانی فعال</div>
+                <div class="kpi-value fs-6 ltr text-end">
+                    {% if start and end %}
+                        {{ start }} <span class="text-muted fw-normal">تا</span> {{ end }}
+                    {% else %}
+                        <span class="text-muted fs-6 fw-normal">کل سوابق ثبت‌شده</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- جدول جزئیات کارکرد روزانه -->
+<div class="app-card mb-4">
+    <div class="app-card-header bg-white">
+        <div class="d-flex align-items-center gap-2">
+            <i class="fa-solid fa-table-list text-primary"></i>
+            <h2 class="h6 mb-0 fw-bold">جزئیات سوابق ثبت‌شده در بازه</h2>
+        </div>
+        <span class="badge bg-light text-secondary border px-2 py-1 rounded-pill">
+            {{ daily_report|length }} سابقه یافت شد
+        </span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-modern text-center align-middle mb-0">
+            <thead>
+                <tr>
+                    <th style="width: 50px;">#</th>
+                    <th style="width: 70px;">شناسه</th>
+                    <th>تاریخ و ساعت ورود</th>
+                    <th>پروژه</th>
+                    <th>مدت کارکرد (ساعت)</th>
+                    <th>توضیحات</th>
+                    <th style="width: 120px;">عملیات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in daily_report %}
+                    <tr>
+                        <td class="text-muted small">{{ forloop.counter }}</td>
+                        <td class="text-muted small ltr">#{{ entry.id }}</td>
+                        <td class="ltr text-muted small">{{ entry.entry_time|date:'Y-m-d H:i' }}</td>
+                        <td class="fw-bold text-dark">
+                            <i class="fa-solid fa-folder text-muted me-1 small"></i>
+                            {{ entry.project__name|default:project.name }}
+                        </td>
+                        <td>
+                            <span class="badge-duration">{{ entry.total_duration|default:"0" }}</span>
+                        </td>
+                        <td class="text-muted small text-truncate" style="max-width: 200px;" title="{{ entry.description|default:'' }}">
+                            {{ entry.description|default:"-" }}
+                        </td>
+                        <td>
+                            <div class="d-inline-flex align-items-center gap-1" role="group">
+                                <a href="{% url 'edit_time_entry' entry.id %}" class="btn-action-icon btn-edit" title="ویرایش">
+                                    <i class="fa-solid fa-pen"></i>
+                                </a>
+                                <form method="post" action="{% url 'delete_time_entry' entry.id %}" class="d-inline" onsubmit="return confirm('آیا از حذف این رکورد اطمینان دارید؟');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-action-icon btn-delete" title="حذف">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">
+                                    <i class="fa-regular fa-folder-open"></i>
+                                </div>
+                                <h3 class="h6 fw-bold text-dark">هیچ رکوردی برای فیلتر انتخابی یافت نشد</h3>
+                                <p class="small text-muted mb-0">لطفاً بازه تاریخی را تغییر دهید یا پروژه دیگری انتخاب نمایید.</p>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+            {% if daily_report %}
+                <tfoot class="bg-light border-top">
+                    <tr class="fw-bold">
+                        <td colspan="4" class="text-end pe-4 py-3">جمع کل ساعات کاری محاسبه‌شده:</td>
+                        <td class="ltr py-3 text-success fs-6">{{ total_hours }} ساعت</td>
+                        <td colspan="2"></td>
+                    </tr>
+                </tfoot>
+            {% endif %}
+        </table>
+    </div>
+</div>
+
+<!-- دکمه‌های اکشن پایین صفحه -->
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-5">
+    <a href="{% url 'home' %}" class="btn btn-secondary-custom">
+        <i class="fa-solid fa-house"></i>
+        <span>بازگشت به داشبورد</span>
+    </a>
+
+    {% if project_id and start and end %}
+        <a href="{% url 'factor' start end project_id %}" class="btn btn-primary-custom px-4">
+            <i class="fa-solid fa-file-invoice-dollar fs-5"></i>
+            <span>صدور و چاپ فاکتور مالی</span>
+        </a>
+    {% else %}
+        <button class="btn btn-outline-secondary" disabled title="برای چاپ فاکتور، ابتدا باید بازه تاریخی و یک پروژه را انتخاب نمایید.">
+            <i class="fa-solid fa-file-invoice-dollar me-1"></i>
+            <span>چاپ فاکتور (نیازمند انتخاب پروژه و تاریخ)</span>
+        </button>
+    {% endif %}
+</div>
 {% endblock %}
 
 {% block extra_script %}
