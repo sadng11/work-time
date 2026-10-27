@@ -116,7 +116,7 @@ def report(request):
     change_second_to_hour = 0
     if total_duration.seconds:
         change_second_to_hour = total_duration.seconds / 3600
-    total_hours = change_second_to_hour + change_day_to_hour
+    total_hours = round(change_second_to_hour + change_day_to_hour, 2)
     project = None
     if query_params.get('project_id'):
         project = Project.objects.get(id=query_params.get('project_id'))

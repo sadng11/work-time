@@ -82,7 +82,7 @@
             <div>
                 <div class="kpi-title">مجموع ساعت کاری فیلترشده</div>
                 <div class="kpi-value text-success ltr text-end">
-                    {{ total_hours }} <span class="fs-6 fw-normal text-muted">ساعت</span>
+                    {{ total_hours|floatformat:"-2" }} <span class="fs-6 fw-normal text-muted">ساعت</span>
                 </div>
             </div>
         </div>
@@ -194,7 +194,7 @@
                 <tfoot class="bg-light border-top">
                     <tr class="fw-bold">
                         <td colspan="4" class="text-end pe-4 py-3">جمع کل ساعات کاری محاسبه‌شده:</td>
-                        <td class="ltr py-3 text-success fs-6">{{ total_hours }} ساعت</td>
+                        <td class="ltr py-3 text-success fs-6">{{ total_hours|floatformat:"-2" }} ساعت</td>
                         <td colspan="2"></td>
                     </tr>
                 </tfoot>
