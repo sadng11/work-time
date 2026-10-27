@@ -1,193 +1,930 @@
 {% extends 'base.html' %}
 {% load i18n static %}
+
 {% block title %}
-    {{ project.name }} | {{ invoice_number|default:"-" }}
+    فاکتور {{ project.name }} | {{ invoice_number|default:"-" }}
 {% endblock %}
+
 {% block content %}
-    <div class="container my-5 invoice-border">
-        <div class="invoice-container">
-            <div class="invoice-header text-center mb-5">
-                <h3 class="fw-bold mb-0">فاکتور ساعت کاری</h3>
-                <small class="text-muted">شماره فاکتور: {{ invoice_number|default:"-" }}</small>
+<div class="invoice-page-wrapper">
+    <!-- نوار ابزار بالای فاکتور (فقط در نمایش وب - در پرینت مخفی است) -->
+    <div class="invoice-actions-bar no-print mb-4">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <div class="d-flex align-items-center gap-2">
+                <a href="{% if start_date and end_date and project %}{% url 'report' %}?start={{ start_date }}&end={{ end_date }}&project_id={{ project.id }}{% else %}{% url 'report' %}{% endif %}"
+                   class="btn btn-outline-secondary btn-action" title="بازگشت به گزارش فیلترشده">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M1 8a7 7 0 1 0 14 0A7 7 0 0 0 1 8zm15 0A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-4.5-.5a.5.5 0 0 1 0 1H5.707l2.147 2.146a.5.5 0 0 1-.708.708l-3-3a.5.5 0 0 1 0-.708l3-3a.5.5 0 1 1 .708.708L5.707 7.5H11.5z"/>
+                    </svg>
+                    <span>بازگشت به گزارش</span>
+                </a>
+                <a href="{% url 'home' %}" class="btn btn-outline-secondary btn-action" title="صفحه اصلی سامانه">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8.707 1.5a1 1 0 0 0-1.414 0L.646 8.146a.5.5 0 0 0 .708.708L2 8.207V13.5A1.5 1.5 0 0 0 3.5 15h9a1.5 1.5 0 0 0 1.5-1.5V8.207l.646.647a.5.5 0 0 0 .708-.708L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293L8.707 1.5Z"/>
+                        <path d="m8 3.293 6 6V13.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V9.293l6-6Z"/>
+                    </svg>
+                    <span>داشبورد اصلی</span>
+                </a>
             </div>
 
-            <table class="table table-bordered align-middle text-center mb-4">
-                <tbody>
-                <tr>
-                    <th class="bg-light">از تاریخ</th>
-                    <td>{{ start_date }}</td>
-                    <th class="bg-light">تا تاریخ</th>
-                    <td>{{ end_date }}</td>
-                </tr>
-                <tr>
-                    <th class="bg-light">پروژه</th>
-                    <td>{{ project.name }}</td>
-                    <th class="bg-light">کارفرما</th>
-                    <td>{{ project.employer }}</td>
-                </tr>
-                </tbody>
-            </table>
-
-            <table class="table table-bordered text-center mb-4">
-                <thead class="table-light">
-                <tr>
-                    <th>قیمت واحد (تومان)</th>
-                    <th>جمع (ساعت)</th>
-                    <th>مبلغ کل (تومان)</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr>
-                    <td>{{ base_fee }}</td>
-                    <td>{{ total_hours }} </td>
-                    <td>
-                        <div class="fw-bold">{{ total_fee }}</div>
-                        <div style="font-size: 10px; font-weight: normal;">{{ string_fee }}</div>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
-
-            <!-- جایگزین بخش توضیحات فعلی -->
-            <div class="invoice-notes mb-5">
-                <h6 class="fw-bold mb-2">توضیحات:</h6>
-
-                <form id="notes-form" method="post">
-                    {% csrf_token %}
-                    <textarea id="invoice-notes-textarea"
-                              name="notes"
-                              class="form-control"
-                              rows="4"
-                              placeholder="">{{ notes|default:"-" }}</textarea>
-
-                    {#                    <div class="mt-2">#}
-                    {#                        <button type="submit" class="btn btn-primary btn-sm">ذخیره</button>#}
-                    {#                        <button type="button" id="notes-save-ajax" class="btn btn-outline-secondary btn-sm ms-2">ذخیره#}
-                    {#                            خودکار (AJAX)#}
-                    {#                        </button>#}
-                    {#                        <span id="notes-status" class="ms-2 text-muted"></span>#}
-                    {#                    </div>#}
-                </form>
+            <div class="text-center d-none d-md-block">
+                <span class="badge bg-light text-secondary border px-3 py-2 rounded-pill fw-normal">
+                    📄 پیش‌نمایش چاپ استاندارد (A4)
+                </span>
             </div>
 
-
-            <div class="d-flex justify-content-between align-items-center mt-5">
-                <div class="text-end">
-                    <p class="mb-10"><strong>تاریخ صدور:</strong> {{ today|date:"Y/m/d" }}</p>
-                    <p class="mb-0 mt-4"><strong>تنظیم‌کننده:</strong> {{ user.last_name }}</p>
-                </div>
-                <div class="text-end">
-                    <p class="mb-10"><strong>امضا کارفرما:</strong> ..................</p>
-                    <p class="mb-0"><strong>امضا مجری:</strong><img style="width: 100px;" src="{% static 'images/sign.jpg' %}" alt="sign"> </p>
-                </div>
-            </div>
-
-            <div class="text-center mt-4 no-print">
-                <a href="{% if start_date and end_date and project %}{% url 'report' %}?start={{ start_date }}&end={{ end_date }}&project_id={{ project.id }}{% else %}{% url 'report' %}{% endif %}" class="btn btn-secondary px-4">بازگشت به گزارش</a>
-                <a href="{% url 'home' %}" class="btn btn-outline-secondary px-3 ms-2">بازگشت به خانه</a>
-                <button class="btn btn-success px-4 ms-2" onclick="window.print()">چاپ فاکتور</button>
+            <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn btn-primary btn-print-cta px-4" onclick="window.print()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16" class="me-1">
+                        <path d="M2.5 8a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                        <path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5zM4 3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2H4V3zm1 5a2 2 0 0 0-2 2v1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v-1a2 2 0 0 0-2-2H5zm7 2v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1z"/>
+                    </svg>
+                    <span>چاپ فاکتور (Print)</span>
+                </button>
             </div>
         </div>
     </div>
+
+    <!-- برگه فاکتور اصلی (هم در وب هم در خروجی پرینت با ابعاد استاندارد نمایش می‌یابد) -->
+    <div class="invoice-sheet" id="invoice-printable-area">
+        <!-- خط دکوراتیو بالایی فاکتور -->
+        <div class="invoice-top-accent"></div>
+
+        <!-- سربرگ فاکتور -->
+        <header class="invoice-header mb-4">
+            <div class="row align-items-center">
+                <div class="col-sm-7 text-start text-sm-start">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="invoice-logo-badge">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h1 class="invoice-title mb-1">صورت‌حساب کارکرد ساعت کاری</h1>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-sm-5 mt-3 mt-sm-0">
+                    <div class="invoice-meta-box">
+                        <div class="meta-item">
+                            <span class="meta-label">شماره فاکتور:</span>
+                            <span class="meta-value ltr fw-bold text-dark">{{ invoice_number|default:"-" }}</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">تاریخ صدور:</span>
+                            <span class="meta-value">{{ today|date:"Y/m/d" }}</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">وضعیت:</span>
+                            <span class="meta-value text-success fw-bold">آماده تسویه</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- کارت‌های اطلاعات طرفین و بازه زمانی -->
+        <section class="invoice-parties-section mb-4">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="party-card party-customer">
+                        <div class="party-card-header">
+                            <span class="party-badge">مشخصات کارفرما و پروژه</span>
+                        </div>
+                        <div class="party-card-body">
+                            <div class="info-row">
+                                <span class="info-label">کارفرما:</span>
+                                <span class="info-value fw-bold text-dark">{{ project.employer|default:"-" }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">پروژه:</span>
+                                <span class="info-value fw-bold text-primary">{{ project.name }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">بازه زمانی:</span>
+                                <span class="info-value text-secondary">
+                                    {{ start_date }} <span class="mx-1 text-muted">الی</span> {{ end_date }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="party-card party-provider">
+                        <div class="party-card-header">
+                            <span class="party-badge">مشخصات مجری و تنظیم‌کننده</span>
+                        </div>
+                        <div class="party-card-body">
+                            <div class="info-row">
+                                <span class="info-label">مجری:</span>
+                                <span class="info-value fw-bold text-dark">{{ user.get_full_name|default:user.last_name|default:user.username }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">واحد محاسبات:</span>
+                                <span class="info-value">تومان (بر مبنای ساعت کاری)</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">نوع سند:</span>
+                                <span class="info-value">صورتحساب خدمات تخصصی</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- جدول ریز خدمات و محاسبات مالی -->
+        <section class="invoice-table-section mb-4">
+            <div class="table-responsive">
+                <table class="table invoice-table mb-0">
+                    <thead>
+                        <tr>
+                            <th class="text-center col-index">#</th>
+                            <th class="col-description">شرح خدمات و موضوع کارکرد</th>
+                            <th class="text-center col-period">دوره کارکرد</th>
+                            <th class="text-center col-hours">میزان کارکرد</th>
+                            <th class="text-center col-rate">نرخ ساعتی (تومان)</th>
+                            <th class="text-center col-total">مبلغ کل (تومان)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="text-center fw-bold">۱</td>
+                            <td>
+                                <div class="fw-bold text-dark mb-1">خدمات توسعه و انجام وظایف تخصصی</div>
+                                <small class="text-muted">مربوط به پروژه «{{ project.name }}»</small>
+                            </td>
+                            <td class="text-center text-nowrap text-muted small">
+                                <span>{{ start_date }}</span> <span class="mx-1 text-secondary">الی</span> <span>{{ end_date }}</span>
+                            </td>
+                            <td class="text-center fw-bold text-dark text-nowrap">
+                                {{ total_hours }} <span class="fw-normal text-muted small">ساعت</span>
+                            </td>
+                            <td class="text-center text-nowrap">
+                                {{ base_fee }}
+                            </td>
+                            <td class="text-center fw-bold text-dark text-nowrap">
+                                {{ total_fee }}
+                            </td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr class="table-summary-row">
+                            <td colspan="3" class="text-start pe-3 fw-bold text-secondary">
+                                جمع کل ساعات و محاسبات:
+                            </td>
+                            <td class="text-center fw-bold text-dark">
+                                {{ total_hours }} ساعت
+                            </td>
+                            <td class="text-center text-muted small">
+                                نرخ پایه: {{ base_fee }}
+                            </td>
+                            <td class="text-center table-final-amount">
+                                <div class="final-amount-label">مبلغ کل قابل پرداخت</div>
+                                <div class="final-amount-value">{{ total_fee }} <span class="currency">تومان</span></div>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </section>
+
+        <!-- مبلغ به حروف -->
+        <section class="invoice-words-card mb-4">
+            <div class="d-flex align-items-center gap-3">
+                <div class="words-icon-wrap">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <div class="flex-grow-1">
+                    <span class="words-title text-muted">مبلغ نهایی به حروف:</span>
+                    <div class="words-text fw-bold text-dark mt-1">{{ string_fee }} تومان تمام</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- بخش توضیحات و یادداشت‌ها -->
+        <section class="invoice-notes-section mb-4">
+            <h6 class="notes-heading mb-2">توضیحات و شرایط:</h6>
+            <!-- در وب این فرم برای تایپ در دسترس است -->
+            <form id="notes-form" method="post" class="no-print">
+                {% csrf_token %}
+                <textarea id="invoice-notes-textarea"
+                          name="notes"
+                          class="form-control invoice-notes-textarea"
+                          rows="3"
+                          placeholder="در صورت تمایل، توضیحات، شماره حساب/شبا یا شروط تسویه را اینجا وارد کنید...">{{ notes|default:"" }}</textarea>
+            </form>
+            <!-- در پرینت این بلوک تمیز و خوانا چاپ می‌شود -->
+            <div id="invoice-notes-print" class="invoice-notes-printable">
+                {{ notes|default:"کلیه ساعات کاری درج‌شده بر اساس لاگ‌های ثبت‌شده در سامانه ساعت کاری استخراج گردیده و مورد تایید می‌باشد." }}
+            </div>
+        </section>
+
+        <!-- بخش تایید و امضا -->
+        <section class="invoice-signatures-section mt-5 pt-3">
+            <div class="row g-4 align-items-end">
+                <div class="col-6">
+                    <div class="signature-box customer-sig-box text-center">
+                        <div class="sig-header fw-bold text-secondary mb-1">مهر و امضای کارفرما</div>
+                        <div class="sig-subtitle text-muted small mb-3">{{ project.employer|default:"کارفرمای محترم" }}</div>
+                        <div class="sig-space d-flex align-items-center justify-content-center">
+                            <span class="text-muted small sig-placeholder">محل امضا و مهر کارفرما</span>
+                        </div>
+                        <div class="sig-date text-muted small mt-2">تاریخ: ......................</div>
+                    </div>
+                </div>
+
+                <div class="col-6">
+                    <div class="signature-box provider-sig-box text-center">
+                        <div class="sig-header fw-bold text-secondary mb-1">امضا و تایید مجری</div>
+                        <div class="sig-subtitle text-muted small mb-2">{{ user.get_full_name|default:user.last_name|default:user.username }}</div>
+                        <div class="sig-space d-flex align-items-center justify-content-center position-relative">
+                            <img src="{% static 'images/sign.jpg' %}" alt="امضا مجری" class="signature-image">
+                        </div>
+                        <div class="sig-date text-muted small mt-2">تاریخ صدور: {{ today|date:"Y/m/d" }}</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- پاورقی فاکتور -->
+        <footer class="invoice-footer text-center mt-5 pt-3">
+            <div class="footer-note text-muted small">
+                این سند به صورت خودکار توسط سامانه مدیریت ساعت کاری صادر شده و به عنوان صورتحساب کارکرد معتبر است.
+            </div>
+        </footer>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_style %}
-    <style>
-        .invoice-container {
-            direction: rtl;
-            background: #fff;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.08);
+<style>
+    /* ==========================================================================
+       متغیرها و تنظیمات عمومی صفحه فاکتور (Screen View)
+       ========================================================================== */
+    :root {
+        --inv-primary: #0f766e;
+        --inv-primary-dark: #115e59;
+        --inv-primary-light: #ccfbf1;
+        --inv-slate-900: #0f172a;
+        --inv-slate-800: #1e293b;
+        --inv-slate-700: #334155;
+        --inv-slate-600: #475569;
+        --inv-slate-400: #94a3b8;
+        --inv-slate-200: #e2e8f0;
+        --inv-slate-100: #f1f5f9;
+        --inv-slate-50: #f8fafc;
+        --inv-border: #e2e8f0;
+        --inv-radius: 12px;
+    }
+
+    body {
+        background-color: #f1f5f9;
+        font-family: IRANSans, 'IRANSans', system-ui, -apple-system, sans-serif;
+        color: var(--inv-slate-800);
+        margin: 0;
+        padding: 0;
+    }
+
+    .invoice-page-wrapper {
+        max-width: 880px;
+        margin: 24px auto 60px auto;
+        padding: 0 16px;
+    }
+
+    /* نوار ابزار بالای فاکتور */
+    .invoice-actions-bar {
+        background: #ffffff;
+        border: 1px solid var(--inv-border);
+        border-radius: var(--inv-radius);
+        padding: 12px 20px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.03);
+    }
+
+    .btn-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.9rem;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-weight: 500;
+        color: var(--inv-slate-700);
+        background: #ffffff;
+        border: 1px solid var(--inv-border);
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+
+    .btn-action:hover {
+        background: var(--inv-slate-100);
+        color: var(--inv-slate-900);
+        border-color: var(--inv-slate-400);
+        transform: translateY(-1px);
+    }
+
+    .btn-print-cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.95rem;
+        font-weight: bold;
+        background: linear-gradient(135deg, var(--inv-primary) 0%, var(--inv-primary-dark) 100%);
+        border: none;
+        color: #ffffff;
+        border-radius: 8px;
+        padding: 8px 22px;
+        box-shadow: 0 4px 10px rgba(15, 118, 110, 0.25);
+        transition: all 0.2s ease;
+    }
+
+    .btn-print-cta:hover {
+        background: linear-gradient(135deg, #0d655f 0%, #0c4a46 100%);
+        box-shadow: 0 6px 14px rgba(15, 118, 110, 0.35);
+        transform: translateY(-1px);
+        color: #ffffff;
+    }
+
+    /* برگه سفید فاکتور */
+    .invoice-sheet {
+        position: relative;
+        background: #ffffff;
+        border: 1px solid var(--inv-border);
+        border-radius: 16px;
+        padding: 44px 48px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.04), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
+        overflow: hidden;
+    }
+
+    .invoice-top-accent {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 5px;
+        background: linear-gradient(90deg, #0f766e 0%, #0284c7 50%, #0f766e 100%);
+    }
+
+    /* لوگو و عنوان سربرگ */
+    .invoice-logo-badge {
+        width: 48px;
+        height: 48px;
+        background: var(--inv-primary-light);
+        color: var(--inv-primary);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .invoice-title {
+        font-size: 1.45rem;
+        font-weight: 800;
+        color: var(--inv-slate-900);
+        margin: 0;
+    }
+
+    .invoice-subtitle {
+        font-size: 0.85rem;
+    }
+
+    /* باکس مشخصات فاکتور در گوشه چپ */
+    .invoice-meta-box {
+        background: var(--inv-slate-50);
+        border: 1px solid var(--inv-border);
+        border-radius: 10px;
+        padding: 12px 16px;
+    }
+
+    .meta-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.85rem;
+        padding: 3px 0;
+    }
+
+    .meta-label {
+        color: var(--inv-slate-600);
+    }
+
+    .meta-value {
+        font-weight: 600;
+    }
+
+    /* کارت‌های طرفین */
+    .party-card {
+        background: #ffffff;
+        border: 1px solid var(--inv-border);
+        border-radius: 10px;
+        overflow: hidden;
+        height: 100%;
+    }
+
+    .party-card-header {
+        background: var(--inv-slate-50);
+        border-bottom: 1px solid var(--inv-border);
+        padding: 8px 14px;
+    }
+
+    .party-badge {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: var(--inv-slate-700);
+    }
+
+    .party-card-body {
+        padding: 12px 14px;
+    }
+
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.88rem;
+        padding: 4px 0;
+    }
+
+    .info-label {
+        color: var(--inv-slate-600);
+        font-size: 0.85rem;
+    }
+
+    /* جدول ریز کارکرد */
+    .invoice-table {
+        border-collapse: separate;
+        border-spacing: 0;
+        border: 1px solid var(--inv-border);
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .invoice-table thead th {
+        background: var(--inv-slate-100);
+        color: var(--inv-slate-800);
+        font-weight: 700;
+        font-size: 0.85rem;
+        padding: 12px 10px;
+        border-bottom: 2px solid var(--inv-border);
+        border-left: 1px solid var(--inv-border);
+    }
+
+    .invoice-table thead th:last-child {
+        border-left: none;
+    }
+
+    .invoice-table tbody td {
+        padding: 14px 10px;
+        font-size: 0.9rem;
+        vertical-align: middle;
+        border-bottom: 1px solid var(--inv-border);
+        border-left: 1px solid var(--inv-border);
+    }
+
+    .invoice-table tbody td:last-child {
+        border-left: none;
+    }
+
+    .col-index { width: 45px; }
+    .col-period { width: 155px; }
+    .col-hours { width: 110px; }
+    .col-rate { width: 125px; }
+    .col-total { width: 135px; }
+
+    .table-summary-row td {
+        background: var(--inv-slate-50);
+        padding: 14px 12px;
+        border-top: 2px solid var(--inv-border);
+    }
+
+    .table-final-amount {
+        background: #f0fdfa !important;
+        border-left: none !important;
+    }
+
+    .final-amount-label {
+        font-size: 0.75rem;
+        color: var(--inv-primary-dark);
+        font-weight: 600;
+    }
+
+    .final-amount-value {
+        font-size: 1.15rem;
+        font-weight: 800;
+        color: var(--inv-primary-dark);
+    }
+
+    .currency {
+        font-size: 0.75rem;
+        font-weight: normal;
+    }
+
+    /* کارت مبلغ به حروف */
+    .invoice-words-card {
+        background: var(--inv-slate-50);
+        border: 1px solid var(--inv-border);
+        border-right: 4px solid var(--inv-primary);
+        border-radius: 8px;
+        padding: 12px 16px;
+    }
+
+    .words-icon-wrap {
+        color: var(--inv-primary);
+        display: flex;
+        align-items: center;
+    }
+
+    .words-title {
+        font-size: 0.82rem;
+    }
+
+    .words-text {
+        font-size: 0.95rem;
+        color: var(--inv-slate-900);
+    }
+
+    /* بخش یادداشت‌ها */
+    .notes-heading {
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: var(--inv-slate-700);
+    }
+
+    .invoice-notes-textarea {
+        background: #ffffff;
+        border: 1px solid var(--inv-border);
+        border-radius: 8px;
+        font-size: 0.88rem;
+        line-height: 1.6;
+        padding: 10px 14px;
+        color: var(--inv-slate-800);
+        resize: vertical;
+        box-shadow: none;
+    }
+
+    .invoice-notes-textarea:focus {
+        border-color: var(--inv-primary);
+        box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.15);
+    }
+
+    .invoice-notes-printable {
+        display: none;
+        background: var(--inv-slate-50);
+        border: 1px solid var(--inv-border);
+        border-radius: 6px;
+        padding: 10px 14px;
+        font-size: 0.85rem;
+        line-height: 1.6;
+        color: var(--inv-slate-800);
+        text-align: justify;
+    }
+
+    /* بخش امضاها */
+    .signature-box {
+        border: 1px dashed var(--inv-slate-300, #cbd5e1);
+        background: #ffffff;
+        border-radius: 10px;
+        padding: 16px 14px;
+        min-height: 140px;
+    }
+
+    .sig-space {
+        height: 70px;
+    }
+
+    .signature-image {
+        max-height: 65px;
+        max-width: 140px;
+        object-fit: contain;
+    }
+
+    .sig-placeholder {
+        border-bottom: 1px dotted #cbd5e1;
+        padding-bottom: 2px;
+    }
+
+    .invoice-footer {
+        border-top: 1px solid var(--inv-border);
+    }
+
+    .footer-note {
+        font-size: 0.78rem;
+    }
+
+    /* ==========================================================================
+       استایل‌های اختصاصی حالت پرینت (@media print) - تضمین قرارگیری کامل در ۱ صفحه A4
+       ========================================================================== */
+    @media print {
+        @page {
+            size: A4 portrait;
+            margin: 8mm 10mm 8mm 10mm;
         }
 
-        .invoice-header h3 {
-            border-bottom: 2px solid #007bff;
-            display: inline-block;
-            padding-bottom: 6px;
+        *, *:before, *:after {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            box-shadow: none !important;
+            text-shadow: none !important;
         }
 
-        .invoice-notes p {
-            text-align: justify;
-            font-size: 0.95rem;
-            line-height: 1.6;
+        html, body {
+            background: #ffffff !important;
+            background-image: none !important;
+            font-family: IRANSans, 'IRANSans', sans-serif !important;
+            font-size: 10pt !important;
+            color: #000000 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            height: auto !important;
+            overflow: visible !important;
         }
 
-        @media print {
-            @page {
-                size: A5;
-                margin: 10mm;
-                @bottom-center {
-                    content: "صفحه " counter(page) " از " counter(pages);
-                    font-family: IRANSans, 'IRANSans', sans-serif;
-                    font-size: 10pt;
-                    color: #333;
-                }
-                @top-center {
-                    content: "سامانه ساعت کاری";
-                    font-family: IRANSans, 'IRANSans', sans-serif;
-                    font-size: 10pt;
-                    color: #333;
-                }
-            }
+        .no-print,
+        .invoice-actions-bar,
+        button,
+        nav,
+        header.site-header {
+            display: none !important;
+            visibility: hidden !important;
+        }
 
-            body {
-                direction: rtl;
-                font-family: IRANSans, 'IRANSans', sans-serif;
-                -webkit-print-color-adjust: exact !important;
-                color-adjust: exact !important;
-                background: #fff !important;
-            }
+        .invoice-page-wrapper {
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
 
-            .invoice-border {
-                border: 3px double #666 !important;
-                border-radius: 10px !important;
-                background: #fff !important;
-                padding: 10px !important;
-                padding-bottom: 20px !important;
-                box-shadow: none !important;
-            }
+        .invoice-sheet {
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 6px !important;
+            padding: 16px 20px !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            width: 100% !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            page-break-after: avoid !important;
+            break-after: avoid !important;
+        }
 
-            .no-print {
-                display: none !important;
-            }
+        .invoice-top-accent {
+            height: 3px !important;
+            background: #0f766e !important;
+        }
 
-            .invoice-container {
-                box-shadow: none !important;
-                margin: 0 !important;
-                padding: 0 !important;
-            }
+        /* فشرده‌سازی فواصل بخش‌ها برای تک صفحه‌ای شدن */
+        .invoice-header {
+            margin-bottom: 10px !important;
+        }
 
-            table {
-                border-collapse: collapse !important;
-            }
+        .invoice-logo-badge {
+            width: 38px !important;
+            height: 38px !important;
+            border-radius: 8px !important;
+        }
 
-            th, td {
-                border: 1px solid #555 !important;
-                padding: 6px !important;
-            }
+        .invoice-logo-badge svg {
+            width: 22px !important;
+            height: 22px !important;
+        }
 
-            .invoice-notes p {
-                border: 1px solid #555 !important;
-                min-height: 60px;
-                padding: 8px !important;
-            }
+        .invoice-title {
+            font-size: 13.5pt !important;
+            color: #0f172a !important;
+            margin-bottom: 2px !important;
+        }
 
+        .invoice-subtitle {
+            font-size: 7.5pt !important;
+        }
 
-            #invoice-notes-textarea {
-                border: 1px solid #ccc !important;
-                box-shadow: none !important;
-                resize: none !important;
-                outline: none !important;
-                -webkit-appearance: none;
-                line-height: 1.5;
-                white-space: pre-wrap;
-            }
+        .invoice-meta-box {
+            padding: 6px 10px !important;
+            border-radius: 6px !important;
+            background: #f8fafc !important;
+            border-color: #cbd5e1 !important;
+        }
 
-            /* دکمه‌ها را مخفی کن */
-            .no-print, button {
-                display: none !important;
+        .meta-item {
+            font-size: 8pt !important;
+            padding: 1px 0 !important;
+        }
+
+        /* بخش طرفین */
+        .invoice-parties-section {
+            margin-bottom: 10px !important;
+        }
+
+        .party-card {
+            border-radius: 6px !important;
+            border-color: #cbd5e1 !important;
+        }
+
+        .party-card-header {
+            padding: 4px 8px !important;
+            background: #f8fafc !important;
+            border-color: #cbd5e1 !important;
+        }
+
+        .party-badge {
+            font-size: 8pt !important;
+        }
+
+        .party-card-body {
+            padding: 6px 8px !important;
+        }
+
+        .info-row {
+            padding: 1px 0 !important;
+            font-size: 8.5pt !important;
+        }
+
+        .info-label {
+            font-size: 8pt !important;
+        }
+
+        /* جدول خدمات */
+        .invoice-table-section {
+            margin-bottom: 10px !important;
+        }
+
+        .invoice-table {
+            border-color: #cbd5e1 !important;
+            border-radius: 6px !important;
+        }
+
+        .invoice-table thead th {
+            background: #f1f5f9 !important;
+            color: #0f172a !important;
+            border-color: #cbd5e1 !important;
+            padding: 6px 6px !important;
+            font-size: 8.5pt !important;
+        }
+
+        .invoice-table tbody td {
+            border-color: #cbd5e1 !important;
+            padding: 6px 6px !important;
+            font-size: 8.5pt !important;
+        }
+
+        .table-summary-row td {
+            background: #f8fafc !important;
+            border-color: #cbd5e1 !important;
+            padding: 6px 6px !important;
+            font-size: 8.5pt !important;
+        }
+
+        .table-final-amount {
+            background: #f1f5f9 !important;
+        }
+
+        .final-amount-label {
+            font-size: 7pt !important;
+        }
+
+        .final-amount-value {
+            font-size: 10.5pt !important;
+            color: #0f766e !important;
+        }
+
+        /* کارت مبلغ به حروف */
+        .invoice-words-card {
+            margin-bottom: 10px !important;
+            padding: 5px 10px !important;
+            border-radius: 6px !important;
+            background: #f8fafc !important;
+            border-color: #cbd5e1 !important;
+        }
+
+        .words-title {
+            font-size: 7.5pt !important;
+        }
+
+        .words-text {
+            font-size: 8.5pt !important;
+        }
+
+        .words-icon-wrap svg {
+            width: 18px !important;
+            height: 18px !important;
+        }
+
+        /* بخش توضیحات */
+        .invoice-notes-section {
+            margin-bottom: 10px !important;
+        }
+
+        .notes-heading {
+            font-size: 8pt !important;
+            margin-bottom: 3px !important;
+        }
+
+        #notes-form {
+            display: none !important;
+        }
+
+        .invoice-notes-printable {
+            display: block !important;
+            background: #f8fafc !important;
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 6px !important;
+            padding: 6px 10px !important;
+            font-size: 8pt !important;
+            line-height: 1.4 !important;
+        }
+
+        /* بخش امضاها */
+        .invoice-signatures-section {
+            margin-top: 12px !important;
+            padding-top: 0 !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+        }
+
+        .signature-box {
+            border: 1px solid #94a3b8 !important;
+            border-radius: 6px !important;
+            min-height: 90px !important;
+            padding: 6px 8px !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+        }
+
+        .sig-header {
+            font-size: 8.5pt !important;
+            margin-bottom: 2px !important;
+        }
+
+        .sig-subtitle {
+            font-size: 7.5pt !important;
+            margin-bottom: 2px !important;
+        }
+
+        .sig-space {
+            height: 42px !important;
+        }
+
+        .signature-image {
+            max-height: 40px !important;
+        }
+
+        .sig-placeholder {
+            font-size: 7pt !important;
+        }
+
+        .sig-date {
+            font-size: 7.5pt !important;
+            margin-top: 2px !important;
+        }
+
+        /* پاورقی */
+        .invoice-footer {
+            border-top: 1px solid #cbd5e1 !important;
+            margin-top: 8px !important;
+            padding-top: 4px !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+        }
+
+        .footer-note {
+            font-size: 7.5pt !important;
+            color: #64748b !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_script %}
+<script>
+    // همگام‌سازی یادداشت تایپ‌شده با بلوک چاپی قبل از پرینت
+    function syncNotesForPrint() {
+        const textarea = document.getElementById('invoice-notes-textarea');
+        const printBlock = document.getElementById('invoice-notes-print');
+        if (textarea && printBlock) {
+            const val = textarea.value.trim();
+            if (val) {
+                printBlock.textContent = val;
+            } else {
+                printBlock.textContent = 'کلیه ساعات کاری درج‌شده بر اساس لاگ‌های ثبت‌شده در سامانه ساعت کاری استخراج گردیده و مورد تایید می‌باشد.';
             }
         }
-    </style>
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const textarea = document.getElementById('invoice-notes-textarea');
+        if (textarea) {
+            textarea.addEventListener('input', syncNotesForPrint);
+            syncNotesForPrint();
+        }
+    });
+
+    window.addEventListener('beforeprint', syncNotesForPrint);
+</script>
 {% endblock %}
