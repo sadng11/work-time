@@ -152,15 +152,15 @@ def factor(request, start=None, end=None, project=None):
     change_second_to_hour = 0
     if total_duration.seconds:
         change_second_to_hour = total_duration.seconds / 3600
-    total_hours = round(change_second_to_hour + change_day_to_hour)
+    total_hours = round(change_second_to_hour + change_day_to_hour, 2)
 
     project = Project.objects.get(id=project)
     base_fee = project.unit_price if project.unit_price else 300_000
     total_fee = round(total_hours * base_fee)
     return render(request, 'factor.html', {
-        'total_hours': f"{total_hours:,}",
+        'total_hours': f"{total_hours:,.2f}" if total_hours % 1 != 0 else f"{int(total_hours):,}",
         "base_fee": f"{base_fee:,}",
-        "total_fee": f"{total_fee :,}",
+        "total_fee": f"{total_fee:,}",
         "string_fee": f"{words(total_fee)}",
         "start_date": start,
         "end_date": end,

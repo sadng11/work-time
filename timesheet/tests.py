@@ -168,3 +168,20 @@ class TimeEntryManualAndCrudTests(TestCase):
         self.assertContains(response, 'همه پروژه‌ها')
         self.assertContains(response, self.project.name)
 
+    def test_factor_page_decimal_hours_and_fee(self):
+        """فاکتور نباید ساعت را به عدد صحیح گرد کند و محاسبات باید با اعشار دقیق باشد"""
+        start = jdatetime.datetime(1405, 8, 1, 8, 0)
+        end = jdatetime.datetime(1405, 8, 1, 13, 12)
+        TimeEntry.objects.create(
+            user=self.user,
+            project=self.project,
+            entry_time=start,
+            exit_time=end,
+            description='کارکرد با اعشار'
+        )
+        factor_url = reverse('factor', args=['1405-08-01', '1405-08-05', self.project.id])
+        response = self.client.get(factor_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '5.20')
+        self.assertContains(response, '2,080,000')
+
