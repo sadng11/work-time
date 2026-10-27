@@ -1,45 +1,96 @@
 import random
 
 import jdatetime
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from jdatetime import timedelta
-
-from .models import Project, TimeEntry
-from .forms import TimeEntryForm
 from django.db.models import Sum
 from num2fawords import words
 
+from .models import Project, TimeEntry
+from .forms import TimeEntryForm, ManualTimeEntryForm
+
+
 @login_required
 def home(request):
+    action = request.POST.get('action', 'quick_entry') if request.method == 'POST' else None
+
     if request.method == 'POST':
-        time_entry_form = TimeEntryForm(request.POST)
-        if time_entry_form.is_valid():
-            last_entry = TimeEntry.objects.filter(user=request.user,
-                                                  project=time_entry_form.instance.project_id).order_by('-id').first()
-            if last_entry and not last_entry.exit_time:
-                last_entry.exit_time = time_entry_form.cleaned_data['entry_time']
-                last_entry.save()
-            else:
-                time_entry = time_entry_form.save(commit=False)
+        if action == 'manual_entry':
+            manual_form = ManualTimeEntryForm(request.POST, user=request.user)
+            time_entry_form = TimeEntryForm(user=request.user)
+            if manual_form.is_valid():
+                time_entry = manual_form.save(commit=False)
                 time_entry.user = request.user
                 time_entry.save()
-            return redirect('home')
+                messages.success(request, 'رکورد جدید با موفقیت ثبت شد.')
+                return redirect('home')
+        else:
+            time_entry_form = TimeEntryForm(request.POST, user=request.user)
+            manual_form = ManualTimeEntryForm(user=request.user)
+            if time_entry_form.is_valid():
+                last_entry = TimeEntry.objects.filter(
+                    user=request.user,
+                    project=time_entry_form.instance.project_id
+                ).order_by('-id').first()
+                if last_entry and not last_entry.exit_time:
+                    last_entry.exit_time = time_entry_form.cleaned_data['entry_time']
+                    last_entry.save()
+                    messages.success(request, f'زمان خروج برای پروژه «{last_entry.project.name}» ثبت شد.')
+                else:
+                    time_entry = time_entry_form.save(commit=False)
+                    time_entry.user = request.user
+                    time_entry.save()
+                    messages.success(request, f'زمان ورود برای پروژه «{time_entry.project.name}» ثبت شد.')
+                return redirect('home')
     else:
-        time_entry_form = TimeEntryForm()
+        time_entry_form = TimeEntryForm(user=request.user)
+        manual_form = ManualTimeEntryForm(user=request.user)
 
     projects = Project.objects.filter(user=request.user)
-    time_entries = TimeEntry.objects.filter(user=request.user).order_by('-entry_time')[:10]
+    time_entries = TimeEntry.objects.filter(user=request.user).order_by('-entry_time')[:15]
     today = jdatetime.date.today()
     start_date = jdatetime.date(today.year, today.month, 1).strftime('%Y-%m-%d')
     end_date = today.strftime('%Y-%m-%d')
     return render(request, 'home.html', {
         'time_entry_form': time_entry_form,
+        'manual_form': manual_form,
         'projects': projects,
         'start_date': start_date,
         'end_date': end_date,
         'time_entries': time_entries,
     })
+
+
+@login_required
+def edit_time_entry(request, entry_id):
+    """ویرایش یک رکورد ساعت کاری مشخص توسط کاربر صاحب آن"""
+    entry = get_object_or_404(TimeEntry, id=entry_id, user=request.user)
+    if request.method == 'POST':
+        form = ManualTimeEntryForm(request.POST, instance=entry, user=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'رکورد پروژه «{entry.project.name}» با موفقیت ویرایش شد.')
+            return redirect('home')
+    else:
+        form = ManualTimeEntryForm(instance=entry, user=request.user)
+
+    return render(request, 'edit_entry.html', {
+        'form': form,
+        'entry': entry,
+    })
+
+
+@login_required
+def delete_time_entry(request, entry_id):
+    """حذف ایمن یک رکورد ساعت کاری با متد POST"""
+    entry = get_object_or_404(TimeEntry, id=entry_id, user=request.user)
+    if request.method == 'POST':
+        project_name = entry.project.name
+        entry.delete()
+        messages.success(request, f'رکورد مربوط به پروژه «{project_name}» حذف شد.')
+    return redirect('home')
 
 
 @login_required
@@ -110,11 +161,11 @@ def factor(request, start=None, end=None, project=None):
         'total_hours': f"{total_hours:,}",
         "base_fee": f"{base_fee:,}",
         "total_fee": f"{total_fee :,}",
-        "string_fee":f"{words(total_fee)}",
+        "string_fee": f"{words(total_fee)}",
         "start_date": start,
         "end_date": end,
         "project": project,
         "invoice_number": f"{jdatetime.datetime.now().strftime('%Y%m%d')}/{random.choice([i for i in range(1, 10)])}",
         "today": jdatetime.datetime.now(),
-        "user":request.user
+        "user": request.user
     })

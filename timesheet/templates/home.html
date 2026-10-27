@@ -1,38 +1,171 @@
 {% extends 'base.html' %}
+{% block title %}سیستم ساعت کاری{% endblock %}
+
 {% block content %}
-    <h1 class="mb-4 text-center">سیستم ساعت کاری</h1>
+<div class="row mb-4">
+    <div class="col-12 text-center">
+        <h1 class="display-6 fw-bold text-dark">سیستم ساعت کاری</h1>
+        <p class="text-muted">مدیریت و ثبت دقیق کارکرد پروژه‌ها و صدور فاکتور</p>
+    </div>
+</div>
 
-    <h3 class="mt-5">ثبت زمان</h3>
-    <form method="post">
-        {% csrf_token %}
-        {{ time_entry_form.as_p }}
-        <button type="submit" class="btn btn-success">ثبت</button>
-    </form>
+<!-- تب‌های ثبت سریع و ثبت دستی -->
+<div class="card shadow-sm border-0 rounded-3 mb-5">
+    <div class="card-header bg-white border-bottom-0 pt-3">
+        <ul class="nav nav-tabs card-header-tabs" id="entryTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active fw-bold" id="quick-tab" data-bs-toggle="tab" data-bs-target="#quick-entry" type="button" role="tab" aria-controls="quick-entry" aria-selected="true">
+                    ⚡ ثبت سریع (ورود / خروج)
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link fw-bold" id="manual-tab" data-bs-toggle="tab" data-bs-target="#manual-entry" type="button" role="tab" aria-controls="manual-entry" aria-selected="false">
+                    📝 ثبت دستی (با زمان شروع و پایان)
+                </button>
+            </li>
+        </ul>
+    </div>
+    <div class="card-body p-4">
+        <div class="tab-content" id="entryTabsContent">
+            <!-- تب ثبت سریع -->
+            <div class="tab-pane fade show active" id="quick-entry" role="tabpanel" aria-labelledby="quick-tab">
+                <p class="text-muted small mb-3">اگر آخرین کارکرد پروژه باز باشد، زمان ثبت‌شده به عنوان خروج ثبت می‌شود؛ در غیر این صورت ورود جدید ایجاد خواهد شد.</p>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label for="{{ time_entry_form.project.id_for_label }}" class="form-label fw-bold">پروژه</label>
+                            {{ time_entry_form.project }}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="{{ time_entry_form.entry_time.id_for_label }}" class="form-label fw-bold">زمان</label>
+                            {{ time_entry_form.entry_time }}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="{{ time_entry_form.description.id_for_label }}" class="form-label fw-bold">توضیحات</label>
+                            {{ time_entry_form.description }}
+                        </div>
+                        <div class="col-12 mt-4 text-start">
+                            <button type="submit" name="action" value="quick_entry" class="btn btn-success px-4">
+                                ⏱️ ثبت زمان ورود / خروج
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
 
-    <h3 class="mt-5"> ثبت‌های زمان اخیر</h3>
-    <table class="table text-center table-striped">
-        <thead>
-        <tr>
-            <th>#</th>
-            <th>پروژه</th>
-            <th>زمان ورود</th>
-            <th>زمان خروج</th>
-            <th>مدت زمان</th>
-            <th>توضیحات</th>
-        </tr>
-        </thead>
-        <tbody>
-        {% for entry in time_entries %}
-            <tr>
-                <td>{{ forloop.counter }}</td>
-                <td>{{ entry.project.name }}</td>
-                <td class="ltr">{{ entry.entry_time }}</td>
-                <td class="ltr">{{ entry.exit_time|default:"-" }}</td>
-                <td>{{ entry.cal_duration|default:"-" }}</td>
-                <td>{{ entry.description|default:"-" }}</td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-    <a href="{% url 'report' %}?start={{ start_date }}&end={{ end_date }}" class="btn btn-info">مشاهده گزارش</a>
+            <!-- تب ثبت دستی سابقه گذشته -->
+            <div class="tab-pane fade" id="manual-entry" role="tabpanel" aria-labelledby="manual-tab">
+                <p class="text-muted small mb-3">برای ثبت کارهای قبلی که فراموش شده‌اند یا تنظیم سابقه دقیق با زمان شروع و پایان مشخص.</p>
+                {% if manual_form.non_field_errors %}
+                    <div class="alert alert-danger py-2">
+                        {% for error in manual_form.non_field_errors %}
+                            <div>{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label for="{{ manual_form.project.id_for_label }}" class="form-label fw-bold">پروژه</label>
+                            {{ manual_form.project }}
+                            {% if manual_form.project.errors %}
+                                <div class="text-danger small mt-1">{{ manual_form.project.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <label for="{{ manual_form.entry_time.id_for_label }}" class="form-label fw-bold">زمان شروع</label>
+                            {{ manual_form.entry_time }}
+                            {% if manual_form.entry_time.errors %}
+                                <div class="text-danger small mt-1">{{ manual_form.entry_time.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <label for="{{ manual_form.exit_time.id_for_label }}" class="form-label fw-bold">زمان پایان</label>
+                            {{ manual_form.exit_time }}
+                            {% if manual_form.exit_time.errors %}
+                                <div class="text-danger small mt-1">{{ manual_form.exit_time.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <label for="{{ manual_form.description.id_for_label }}" class="form-label fw-bold">توضیحات</label>
+                            {{ manual_form.description }}
+                            {% if manual_form.description.errors %}
+                                <div class="text-danger small mt-1">{{ manual_form.description.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-12 mt-4 text-start">
+                            <button type="submit" name="action" value="manual_entry" class="btn btn-primary px-4">
+                                💾 ثبت دستی سابقه کاری
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- جدول ثبت‌های اخیر -->
+<div class="card shadow-sm border-0 rounded-3 mb-4">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center py-3">
+        <h5 class="mb-0 fw-bold">📋 ثبت‌های اخیر زمان</h5>
+        <a href="{% url 'report' %}?start={{ start_date }}&end={{ end_date }}" class="btn btn-sm btn-info text-white">
+            📊 مشاهده و فیلتر گزارش کامل
+        </a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover text-center align-middle mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th scope="col" style="width: 50px;">#</th>
+                    <th scope="col">پروژه</th>
+                    <th scope="col">زمان ورود</th>
+                    <th scope="col">زمان خروج</th>
+                    <th scope="col">مدت زمان</th>
+                    <th scope="col">توضیحات</th>
+                    <th scope="col" style="width: 150px;">عملیات</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for entry in time_entries %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td class="fw-bold">{{ entry.project.name }}</td>
+                        <td class="ltr">{{ entry.entry_time }}</td>
+                        <td class="ltr">
+                            {% if entry.exit_time %}
+                                {{ entry.exit_time }}
+                            {% else %}
+                                <span class="badge bg-warning text-dark">⏳ در حال انجام</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ entry.cal_duration|default:"-" }}</td>
+                        <td class="text-muted">{{ entry.description|default:"-" }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a href="{% url 'edit_time_entry' entry.id %}" class="btn btn-outline-primary" title="ویرایش">
+                                    ✏️ ویرایش
+                                </a>
+                                <form method="post" action="{% url 'delete_time_entry' entry.id %}" class="d-inline" onsubmit="return confirm('آیا از حذف این رکورد مربوط به پروژه «{{ entry.project.name }}» اطمینان دارید؟');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-outline-danger" title="حذف">
+                                        🗑️
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="7" class="py-4 text-muted">هنوز هیچ رکوردی برای شما ثبت نشده است.</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 {% endblock %}

@@ -38,6 +38,7 @@
             <th>پروژه</th>
             <th>مجموع زمان (ساعت)</th>
             <th>توضیحات</th>
+            <th>عملیات</th>
         </tr>
         </thead>
         <tbody>
@@ -49,12 +50,28 @@
                 <td>{{ project.name }}</td>
                 <td>{{ entry.total_duration|default:"0" }}</td>
                 <td>{{ entry.description|default:"-" }}</td>
+                <td>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <a href="{% url 'edit_time_entry' entry.id %}" class="btn btn-sm btn-outline-primary" title="ویرایش">
+                            ✏️
+                        </a>
+                        <form method="post" action="{% url 'delete_time_entry' entry.id %}" class="d-inline" onsubmit="return confirm('آیا از حذف این رکورد اطمینان دارید؟');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="حذف">
+                                🗑️
+                            </button>
+                        </form>
+                    </div>
+                </td>
             </tr>
         {% endfor %}
         <tr>
             <td></td>
             <td>جمع ساعت کاری</td>
             <td class="bold ltr">{{ total_hours }} ساعت</td>
+            <td></td>
+            <td></td>
+            <td></td>
             <td></td>
         </tr>
         </tbody>
