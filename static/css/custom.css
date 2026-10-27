@@ -394,6 +394,17 @@ a:hover {
     transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
+/* رفع تداخل فلش در دراپ‌داون‌های راست‌چین (RTL Select Box) */
+.form-select,
+select.form-select,
+select.form-control,
+select {
+    background-position: left 0.85rem center !important;
+    padding-left: 2.5rem !important;
+    padding-right: 0.95rem !important;
+    background-size: 16px 12px !important;
+}
+
 .form-control:focus, .form-select:focus {
     border-color: var(--color-primary);
     box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.15);
