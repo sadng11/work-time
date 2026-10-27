@@ -10,3 +10,4 @@ sentry-sdk
 django-silk
 requests
 num2fawords
+django-daisy-theme
