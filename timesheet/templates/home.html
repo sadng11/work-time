@@ -21,42 +21,119 @@
     </div>
 </div>
 
+<!-- ویجت استاپ‌واچ و تایمر زنده (Live Stopwatch Bar) -->
+<div class="live-timer-hero mb-4 {% if active_timer %}is-active{% endif %}" id="liveTimerWidget" {% if active_timer %}data-active="true" data-elapsed="{{ active_timer_elapsed_seconds }}"{% endif %}>
+    {% if active_timer %}
+        <!-- وضعیت فعال: تایمر در حال کارکرد -->
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="pulse-indicator active-green" style="width: 14px; height: 14px;"></div>
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill small fw-bold">
+                            <i class="fa-solid fa-play me-1"></i> در حال ضبط کارکرد
+                        </span>
+                        <span class="text-muted small">شروع از: {{ active_timer.entry_time|date:"H:i" }}</span>
+                    </div>
+                    <div class="h5 mb-0 fw-bold text-dark d-flex align-items-center gap-2">
+                        <i class="fa-solid fa-folder text-primary"></i>
+                        <span>{{ active_timer.project.name }}</span>
+                    </div>
+                    {% if active_timer.description %}
+                        <div class="text-muted small mt-1 text-truncate" style="max-width: 380px;">
+                            <i class="fa-solid fa-align-right me-1 text-secondary"></i>{{ active_timer.description }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="d-flex flex-wrap align-items-center gap-3 ms-auto">
+                <div class="timer-digital-display" id="liveTimerDisplay">
+                    00:00:00
+                </div>
+                <form method="post" action="{% url 'stop_timer' %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger-custom">
+                        <i class="fa-solid fa-stop"></i>
+                        <span>توقف و ثبت کارکرد</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    {% else %}
+        <!-- وضعیت آماده‌باش: انتخاب پروژه و شروع تایمر -->
+        <form method="post" action="{% url 'start_timer' %}">
+            {% csrf_token %}
+            <div class="row g-3 align-items-center">
+                <div class="col-lg-4 col-md-5">
+                    <label class="form-label small fw-bold mb-1 text-muted">
+                        <i class="fa-solid fa-folder-open text-primary"></i>
+                        <span>انتخاب پروژه برای شروع کار</span>
+                    </label>
+                    <select class="form-select" name="project" required>
+                        <option value="" disabled selected>-- انتخاب پروژه --</option>
+                        {% for p in projects %}
+                            <option value="{{ p.id }}">{{ p.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-4 col-md-4">
+                    <label class="form-label small fw-bold mb-1 text-muted">
+                        <i class="fa-solid fa-pen-nib text-secondary"></i>
+                        <span>عنوان یا شرح فعالیت (اختیاری)</span>
+                    </label>
+                    <input type="text" class="form-control" name="description" placeholder="الان داری روی چی کار می‌کنی؟" autocomplete="off">
+                </div>
+                <div class="col-lg-2 col-md-3 text-center">
+                    <div class="timer-digital-display text-muted" style="min-width: 140px; font-size: 1.8rem; padding: 0.25rem 0.75rem;">
+                        00:00:00
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-12 text-md-start">
+                    <button type="submit" class="btn btn-primary-custom w-100" style="padding: 0.72rem 1.25rem;">
+                        <i class="fa-solid fa-play"></i>
+                        <span>شروع تایمر</span>
+                    </button>
+                </div>
+            </div>
+        </form>
+    {% endif %}
+</div>
+
 <!-- ردیف کارت‌های خلاصه وضعیت و آمار (KPI Stat Cards) -->
 <div class="row g-3 mb-4">
     <!-- وضعیت لحظه‌ای تایمر -->
     <div class="col-md-4">
         <div class="kpi-card">
-            {% with active_entry=time_entries.0 %}
-                {% if active_entry and not active_entry.exit_time %}
-                    <div class="kpi-icon warning">
-                        <i class="fa-solid fa-stopwatch fa-beat-fade"></i>
+            {% if active_timer %}
+                <div class="kpi-icon warning">
+                    <i class="fa-solid fa-stopwatch fa-beat-fade"></i>
+                </div>
+                <div class="overflow-hidden">
+                    <div class="kpi-title d-flex align-items-center gap-2">
+                        <span class="pulse-indicator"></span>
+                        <span>تایمر در حال اجرا</span>
                     </div>
-                    <div class="overflow-hidden">
-                        <div class="kpi-title d-flex align-items-center gap-2">
-                            <span class="pulse-indicator"></span>
-                            <span>تایمر در حال اجرا</span>
-                        </div>
-                        <div class="kpi-value text-truncate fs-6" title="{{ active_entry.project.name }}">
-                            {{ active_entry.project.name }}
-                        </div>
-                        <div class="text-muted small ltr mt-1">
-                            <i class="fa-regular fa-clock me-1"></i>{{ active_entry.entry_time }}
-                        </div>
+                    <div class="kpi-value text-truncate fs-6" title="{{ active_timer.project.name }}">
+                        {{ active_timer.project.name }}
                     </div>
-                {% else %}
-                    <div class="kpi-icon primary">
-                        <i class="fa-solid fa-circle-check"></i>
+                    <div class="text-muted small ltr mt-1">
+                        <i class="fa-regular fa-clock me-1"></i><span id="kpiTimerDisplay">00:00:00</span>
                     </div>
-                    <div>
-                        <div class="kpi-title d-flex align-items-center gap-2">
-                            <span class="pulse-indicator active-green"></span>
-                            <span>وضعیت لحظه‌ای</span>
-                        </div>
-                        <div class="kpi-value fs-6">سیستم آزاد</div>
-                        <div class="text-muted small mt-1">آماده برای ثبت ورود جدید</div>
+                </div>
+            {% else %}
+                <div class="kpi-icon primary">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+                <div>
+                    <div class="kpi-title d-flex align-items-center gap-2">
+                        <span class="pulse-indicator active-green"></span>
+                        <span>وضعیت لحظه‌ای</span>
                     </div>
-                {% endif %}
-            {% endwith %}
+                    <div class="kpi-value fs-6">سیستم آزاد</div>
+                    <div class="text-muted small mt-1">آماده برای شروع کار جدید</div>
+                </div>
+            {% endif %}
         </div>
     </div>
 
@@ -275,6 +352,23 @@
                         </td>
                         <td>
                             <div class="d-inline-flex align-items-center gap-1" role="group">
+                                {% if entry.exit_time %}
+                                    <form method="post" action="{% url 'start_timer' %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="project" value="{{ entry.project.id }}">
+                                        <input type="hidden" name="description" value="{{ entry.description|default:'' }}">
+                                        <button type="submit" class="btn-action-icon btn-resume" title="شروع مجدد این کار (Resume)">
+                                            <i class="fa-solid fa-play"></i>
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    <form method="post" action="{% url 'stop_timer' %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn-action-icon btn-stop-icon" title="توقف و ثبت کارکرد">
+                                            <i class="fa-solid fa-stop"></i>
+                                        </button>
+                                    </form>
+                                {% endif %}
                                 <a href="{% url 'edit_time_entry' entry.id %}" class="btn-action-icon btn-edit" title="ویرایش">
                                     <i class="fa-solid fa-pen"></i>
                                 </a>
@@ -304,4 +398,56 @@
         </table>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_script %}
+<script>
+    jalaliDatepicker.startWatch({
+        date: true,
+        time: true,
+        separatorChars: {
+            date: "-",
+            between: " ",
+            time: ":"
+        }
+    });
+
+    // استاپ‌واچ و تایمر زنده
+    (function () {
+        const widget = document.getElementById('liveTimerWidget');
+        if (!widget || !widget.dataset.active) return;
+
+        const timerDisplay = document.getElementById('liveTimerDisplay');
+        const kpiDisplay = document.getElementById('kpiTimerDisplay');
+        const initialElapsed = parseInt(widget.dataset.elapsed || '0', 10);
+        const startTime = Date.now() - (initialElapsed * 1000);
+
+        function pad(n) {
+            return n < 10 ? '0' + n : n;
+        }
+
+        function formatHMS(totalSeconds) {
+            const h = Math.floor(totalSeconds / 3600);
+            const m = Math.floor((totalSeconds % 3600) / 60);
+            const s = totalSeconds % 60;
+            return `${pad(h)}:${pad(m)}:${pad(s)}`;
+        }
+
+        function tick() {
+            const currentSeconds = Math.max(0, Math.floor((Date.now() - startTime) / 1000));
+            const timeStr = formatHMS(currentSeconds);
+
+            if (timerDisplay) {
+                timerDisplay.textContent = timeStr;
+            }
+            if (kpiDisplay) {
+                kpiDisplay.textContent = timeStr;
+            }
+            document.title = `⏱️ ${timeStr} — سامانه ساعت کاری`;
+        }
+
+        tick();
+        setInterval(tick, 1000);
+    })();
+</script>
 {% endblock %}

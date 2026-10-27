@@ -229,4 +229,69 @@ class TimeEntryManualAndCrudTests(TestCase):
         # بررسی وجود عنوان گزارش در سلول A1
         self.assertEqual(ws['A1'].value, 'گزارش ساعات کاری و سوابق کارکرد')
 
+    def test_start_timer_creates_active_entry(self):
+        """شروع تایمر باید یک رکورد با exit_time خالی ایجاد کند"""
+        url = reverse('start_timer')
+        response = self.client.post(url, {
+            'project': self.project.id,
+            'description': 'تست شروع تایمر زنده',
+        })
+        self.assertRedirects(response, reverse('home'))
+        active = TimeEntry.objects.filter(user=self.user, exit_time__isnull=True).first()
+        self.assertIsNotNone(active)
+        self.assertEqual(active.project, self.project)
+        self.assertEqual(active.description, 'تست شروع تایمر زنده')
+
+    def test_start_timer_auto_stops_previous_active_timer(self):
+        """شروع تایمر روی پروژه جدید باید تایمر فعال قبلی را به طور خودکار متوقف و ثبت کند"""
+        other_project = Project.objects.create(name='پروژه دوم', user=self.user, unit_price=250_000)
+        # شروع تایمر اول
+        self.client.post(reverse('start_timer'), {'project': self.project.id, 'description': 'کار اول'})
+        first_entry = TimeEntry.objects.filter(user=self.user, project=self.project, exit_time__isnull=True).first()
+        self.assertIsNotNone(first_entry)
+
+        # شروع تایمر دوم
+        self.client.post(reverse('start_timer'), {'project': other_project.id, 'description': 'کار دوم'})
+
+        first_entry.refresh_from_db()
+        self.assertIsNotNone(first_entry.exit_time)
+        self.assertIsNotNone(first_entry.duration)
+
+        second_entry = TimeEntry.objects.filter(user=self.user, project=other_project, exit_time__isnull=True).first()
+        self.assertIsNotNone(second_entry)
+
+    def test_stop_timer_sets_exit_time_and_duration(self):
+        """توقف تایمر باید exit_time را تنظیم کرده و مدت زمان را محاسبه کند"""
+        # ایجاد تایمر باز
+        entry = TimeEntry.objects.create(
+            user=self.user,
+            project=self.project,
+            entry_time=jdatetime.datetime.now() - jdatetime.timedelta(minutes=30),
+            description='کار در حال اجرا'
+        )
+        url = reverse('stop_timer')
+        response = self.client.post(url)
+        self.assertRedirects(response, reverse('home'))
+
+        entry.refresh_from_db()
+        self.assertIsNotNone(entry.exit_time)
+        self.assertIsNotNone(entry.duration)
+        self.assertGreaterEqual(entry.duration.total_seconds(), 1700)
+
+    def test_home_page_displays_active_live_timer(self):
+        """صفحه اصلی در صورت وجود تایمر باز باید ویجت فعال و زمان را نمایش دهد"""
+        entry = TimeEntry.objects.create(
+            user=self.user,
+            project=self.project,
+            entry_time=jdatetime.datetime.now(),
+            description='تسک در حال انجام'
+        )
+        response = self.client.get(reverse('home'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'is-active')
+        self.assertContains(response, 'در حال ضبط کارکرد')
+        self.assertContains(response, 'توقف و ثبت کارکرد')
+        self.assertContains(response, self.project.name)
+
+
 

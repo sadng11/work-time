@@ -54,6 +54,12 @@ def home(request):
     today = jdatetime.date.today()
     start_date = jdatetime.date(today.year, today.month, 1).strftime('%Y-%m-%d')
     end_date = today.strftime('%Y-%m-%d')
+
+    active_timer = TimeEntry.objects.filter(user=request.user, exit_time__isnull=True).order_by('-entry_time').first()
+    active_timer_elapsed_seconds = 0
+    if active_timer:
+        active_timer_elapsed_seconds = max(0, int((jdatetime.datetime.now() - active_timer.entry_time).total_seconds()))
+
     return render(request, 'home.html', {
         'time_entry_form': time_entry_form,
         'manual_form': manual_form,
@@ -61,7 +67,61 @@ def home(request):
         'start_date': start_date,
         'end_date': end_date,
         'time_entries': time_entries,
+        'active_timer': active_timer,
+        'active_timer_elapsed_seconds': active_timer_elapsed_seconds,
     })
+
+
+@login_required
+def start_timer(request):
+    """شروع تایمر زنده برای یک پروژه مشخص (و بستن خودکار تایمر فعال قبلی در صورت وجود)"""
+    if request.method == 'POST':
+        project_id = request.POST.get('project')
+        description = request.POST.get('description', '').strip()
+
+        if not project_id:
+            messages.error(request, 'لطفاً ابتدا یک پروژه را برای شروع تایمر انتخاب نمایید.')
+            return redirect('home')
+
+        project = get_object_or_404(Project, id=project_id, user=request.user)
+
+        # در صورت وجود تایمر فعال قبلی، آن را هوشمندانه می‌بندیم
+        previous_active = TimeEntry.objects.filter(user=request.user, exit_time__isnull=True).first()
+        now = jdatetime.datetime.now()
+        if previous_active:
+            previous_active.exit_time = now
+            previous_active.save()
+            messages.info(request, f'تایمر کارکرد قبلی مربوط به پروژه «{previous_active.project.name}» ذخیره شد.')
+
+        # ایجاد تایمر جدید
+        new_entry = TimeEntry.objects.create(
+            user=request.user,
+            project=project,
+            entry_time=now,
+            description=description,
+        )
+        messages.success(request, f'تایمر کارکرد برای پروژه «{project.name}» با موفقیت فعال شد.')
+
+    return redirect('home')
+
+
+@login_required
+def stop_timer(request):
+    """توقف تایمر فعال و ثبت زمان خروج و محاسبه مدت کارکرد"""
+    if request.method == 'POST':
+        active = TimeEntry.objects.filter(user=request.user, exit_time__isnull=True).order_by('-entry_time').first()
+        if active:
+            active.exit_time = jdatetime.datetime.now()
+            new_desc = request.POST.get('description', '').strip()
+            if new_desc:
+                active.description = new_desc
+            active.save()
+            dur_msg = active.cal_duration or 'کمتر از یک دقیقه'
+            messages.success(request, f'کارکرد پروژه «{active.project.name}» با موفقیت متوقف و ذخیره شد ({dur_msg}).')
+        else:
+            messages.warning(request, 'در حال حاضر هیچ تایمر فعالی برای توقف یافت نشد.')
+
+    return redirect('home')
 
 
 @login_required
