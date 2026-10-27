@@ -185,3 +185,48 @@ class TimeEntryManualAndCrudTests(TestCase):
         self.assertContains(response, '5.20')
         self.assertContains(response, '2,080,000')
 
+    def test_report_excel_export_link_in_html(self):
+        """صفحه گزارش باید دکمه خروجی اکسل با پارامتر export=excel را نمایش دهد"""
+        TimeEntry.objects.create(
+            user=self.user,
+            project=self.project,
+            entry_time=jdatetime.datetime(1405, 8, 1, 9, 0),
+            exit_time=jdatetime.datetime(1405, 8, 1, 11, 0),
+            description='تست لینک اکسل'
+        )
+        url = f"{reverse('report')}?start=1405-08-01&end=1405-08-05&project_id={self.project.id}"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'export=excel')
+        self.assertContains(response, 'خروجی اکسل')
+
+    def test_report_excel_export_file(self):
+        """درخواست خروجی اکسل باید فایل معتبر با فرمت و هدر مناسب تولید کند"""
+        import io
+        import openpyxl
+
+        TimeEntry.objects.create(
+            user=self.user,
+            project=self.project,
+            entry_time=jdatetime.datetime(1405, 8, 1, 9, 0),
+            exit_time=jdatetime.datetime(1405, 8, 1, 12, 0),
+            description='کارکرد برای اکسل'
+        )
+        url = f"{reverse('report')}?start=1405-08-01&end=1405-08-05&project_id={self.project.id}&export=excel"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response['Content-Type'],
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        self.assertIn('attachment; filename="report_1405-08-01_1405-08-05.xlsx"', response['Content-Disposition'])
+
+        # اعتبارسنجی ساختار فایل اکسل دریافتی
+        wb = openpyxl.load_workbook(io.BytesIO(response.content))
+        self.assertIn('گزارش کارکرد', wb.sheetnames)
+        ws = wb['گزارش کارکرد']
+        self.assertTrue(ws.views.sheetView[0].rightToLeft)
+        # بررسی وجود عنوان گزارش در سلول A1
+        self.assertEqual(ws['A1'].value, 'گزارش ساعات کاری و سوابق کارکرد')
+
+

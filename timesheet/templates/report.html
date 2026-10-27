@@ -128,9 +128,17 @@
             <i class="fa-solid fa-table-list text-primary"></i>
             <h2 class="h6 mb-0 fw-bold">جزئیات سوابق ثبت‌شده در بازه</h2>
         </div>
-        <span class="badge bg-light text-secondary border px-2 py-1 rounded-pill">
-            {{ daily_report|length }} سابقه یافت شد
-        </span>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-light text-secondary border px-2 py-1 rounded-pill">
+                {{ daily_report|length }} سابقه یافت شد
+            </span>
+            {% if daily_report %}
+                <a href="{% url 'report' %}?{% if start %}start={{ start }}&{% endif %}{% if end %}end={{ end }}&{% endif %}{% if project_id %}project_id={{ project_id }}&{% endif %}export=excel" class="btn-excel-sm" title="دانلود مستقیم خروجی اکسل">
+                    <i class="fa-solid fa-file-excel"></i>
+                    <span>خروجی اکسل</span>
+                </a>
+            {% endif %}
+        </div>
     </div>
 
     <div class="table-responsive">
@@ -205,10 +213,18 @@
 
 <!-- دکمه‌های اکشن پایین صفحه -->
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-5">
-    <a href="{% url 'home' %}" class="btn btn-secondary-custom">
-        <i class="fa-solid fa-house"></i>
-        <span>بازگشت به داشبورد</span>
-    </a>
+    <div class="d-flex flex-wrap align-items-center gap-2">
+        <a href="{% url 'home' %}" class="btn btn-secondary-custom">
+            <i class="fa-solid fa-house"></i>
+            <span>بازگشت به داشبورد</span>
+        </a>
+        {% if daily_report %}
+            <a href="{% url 'report' %}?{% if start %}start={{ start }}&{% endif %}{% if end %}end={{ end }}&{% endif %}{% if project_id %}project_id={{ project_id }}&{% endif %}export=excel" class="btn-excel-custom">
+                <i class="fa-solid fa-file-excel"></i>
+                <span>دانلود گزارش اکسل</span>
+            </a>
+        {% endif %}
+    </div>
 
     {% if project_id and start and end %}
         <a href="{% url 'factor' start end project_id %}" class="btn btn-primary-custom px-4">

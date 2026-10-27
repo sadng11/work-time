@@ -10,6 +10,7 @@ from num2fawords import words
 
 from .models import Project, TimeEntry
 from .forms import TimeEntryForm, ManualTimeEntryForm
+from .export import export_daily_report_to_excel
 
 
 @login_required
@@ -119,7 +120,17 @@ def report(request):
     total_hours = round(change_second_to_hour + change_day_to_hour, 2)
     project = None
     if query_params.get('project_id'):
-        project = Project.objects.get(id=query_params.get('project_id'))
+        project = Project.objects.filter(id=query_params.get('project_id')).first()
+
+    if query_params.get('export') == 'excel':
+        return export_daily_report_to_excel(
+            daily_report=daily_report,
+            total_hours=total_hours,
+            start=query_params.get('start'),
+            end=query_params.get('end'),
+            project=project,
+        )
+
     project_list = Project.objects.values('id', 'name')
     return render(request, 'report.html', {
         'daily_report': daily_report,

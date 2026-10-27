@@ -463,6 +463,53 @@ select {
     color: var(--color-text-main) !important;
 }
 
+.btn-excel-custom {
+    background-color: #059669;
+    color: #ffffff !important;
+    border: 1px solid #047857;
+    font-weight: 700;
+    padding: 0.62rem 1.25rem;
+    border-radius: var(--radius-sm);
+    box-shadow: 0 2px 6px rgba(5, 150, 105, 0.25);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all var(--transition-fast);
+}
+
+.btn-excel-custom:hover {
+    background-color: #047857;
+    border-color: #065f46;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.35);
+    transform: translateY(-1px);
+}
+
+.btn-excel-custom:active {
+    transform: translateY(0);
+}
+
+.btn-excel-sm {
+    background-color: #ecfdf5;
+    color: #065f46 !important;
+    border: 1px solid #a7f3d0;
+    font-weight: 700;
+    font-size: 0.85rem;
+    padding: 0.35rem 0.85rem;
+    border-radius: var(--radius-sm);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    transition: all var(--transition-fast);
+}
+
+.btn-excel-sm:hover {
+    background-color: #059669;
+    color: #ffffff !important;
+    border-color: #059669;
+}
+
 /* Icon Buttons in Tables */
 .btn-action-icon {
     width: 32px;
