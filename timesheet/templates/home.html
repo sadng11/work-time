@@ -1,103 +1,214 @@
 {% extends 'base.html' %}
-{% block title %}سیستم ساعت کاری{% endblock %}
+{% load i18n static %}
+
+{% block title %}داشبورد و ثبت کارکرد | سامانه ساعت کاری{% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-12 text-center">
-        <h1 class="display-6 fw-bold text-dark">سیستم ساعت کاری</h1>
-        <p class="text-muted">مدیریت و ثبت دقیق کارکرد پروژه‌ها و صدور فاکتور</p>
+<!-- هدر خوش‌آمدگویی داشبورد -->
+<div class="row align-items-center mb-4">
+    <div class="col-md-8">
+        <h1 class="h3 fw-bold text-dark mb-1">
+            <i class="fa-solid fa-gauge-high text-success me-2"></i>
+            داشبورد مدیریت کارکرد
+        </h1>
+        <p class="text-muted small mb-0">ثبت دقیق ساعات کاری پروژه‌ها، محاسبه دستمزد و صدور پیش‌فاکتور مالی</p>
+    </div>
+    <div class="col-md-4 text-md-start mt-3 mt-md-0">
+        <a href="{% url 'report' %}?start={{ start_date }}&end={{ end_date }}" class="btn btn-secondary-custom">
+            <i class="fa-solid fa-chart-line text-primary"></i>
+            <span>گزارش ماه جاری</span>
+        </a>
     </div>
 </div>
 
-<!-- تب‌های ثبت سریع و ثبت دستی -->
-<div class="card shadow-sm border-0 rounded-3 mb-5">
-    <div class="card-header bg-white border-bottom-0 pt-3">
-        <ul class="nav nav-tabs card-header-tabs" id="entryTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active fw-bold" id="quick-tab" data-bs-toggle="tab" data-bs-target="#quick-entry" type="button" role="tab" aria-controls="quick-entry" aria-selected="true">
-                    ⚡ ثبت سریع (ورود / خروج)
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link fw-bold" id="manual-tab" data-bs-toggle="tab" data-bs-target="#manual-entry" type="button" role="tab" aria-controls="manual-entry" aria-selected="false">
-                    📝 ثبت دستی (با زمان شروع و پایان)
-                </button>
-            </li>
-        </ul>
+<!-- ردیف کارت‌های خلاصه وضعیت و آمار (KPI Stat Cards) -->
+<div class="row g-3 mb-4">
+    <!-- وضعیت لحظه‌ای تایمر -->
+    <div class="col-md-4">
+        <div class="kpi-card">
+            {% with active_entry=time_entries.0 %}
+                {% if active_entry and not active_entry.exit_time %}
+                    <div class="kpi-icon warning">
+                        <i class="fa-solid fa-stopwatch fa-beat-fade"></i>
+                    </div>
+                    <div class="overflow-hidden">
+                        <div class="kpi-title d-flex align-items-center gap-2">
+                            <span class="pulse-indicator"></span>
+                            <span>تایمر در حال اجرا</span>
+                        </div>
+                        <div class="kpi-value text-truncate fs-6" title="{{ active_entry.project.name }}">
+                            {{ active_entry.project.name }}
+                        </div>
+                        <div class="text-muted small ltr mt-1">
+                            <i class="fa-regular fa-clock me-1"></i>{{ active_entry.entry_time }}
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="kpi-icon primary">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+                    <div>
+                        <div class="kpi-title d-flex align-items-center gap-2">
+                            <span class="pulse-indicator active-green"></span>
+                            <span>وضعیت لحظه‌ای</span>
+                        </div>
+                        <div class="kpi-value fs-6">سیستم آزاد</div>
+                        <div class="text-muted small mt-1">آماده برای ثبت ورود جدید</div>
+                    </div>
+                {% endif %}
+            {% endwith %}
+        </div>
     </div>
-    <div class="card-body p-4">
+
+    <!-- تعداد پروژه‌های فعال -->
+    <div class="col-md-4">
+        <div class="kpi-card">
+            <div class="kpi-icon info">
+                <i class="fa-solid fa-briefcase"></i>
+            </div>
+            <div>
+                <div class="kpi-title">پروژه‌های در دسترس</div>
+                <div class="kpi-value">{{ projects.count }} <span class="fs-6 fw-normal text-muted">پروژه</span></div>
+                <div class="text-muted small mt-1">اختصاص‌یافته به حساب شما</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ثبت سریع یا صدور فاکتور -->
+    <div class="col-md-4">
+        <div class="kpi-card">
+            <div class="kpi-icon primary">
+                <i class="fa-solid fa-file-invoice-dollar"></i>
+            </div>
+            <div class="flex-grow-1">
+                <div class="kpi-title">پیش‌فاکتور مالی</div>
+                <a href="{% url 'report' %}?start={{ start_date }}&end={{ end_date }}" class="text-decoration-none fw-bold text-dark d-block">
+                    فیلتر و صدور فاکتور
+                    <i class="fa-solid fa-arrow-left ms-1 text-primary small"></i>
+                </a>
+                <div class="text-muted small mt-1">محاسبه بر اساس نرخ ساعتی</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- کارت تب‌بندی شده ثبت کارکرد (ثبت سریع vs ثبت دستی) -->
+<div class="app-card mb-4">
+    <div class="app-card-header bg-white">
+        <div class="nav-pills-custom" id="entryTabs" role="tablist">
+            <button class="nav-link active" id="quick-tab" data-bs-toggle="tab" data-bs-target="#quick-entry" type="button" role="tab" aria-controls="quick-entry" aria-selected="true">
+                <i class="fa-solid fa-bolt-lightning text-warning"></i>
+                <span>ثبت سریع (ورود / خروج)</span>
+            </button>
+            <button class="nav-link" id="manual-tab" data-bs-toggle="tab" data-bs-target="#manual-entry" type="button" role="tab" aria-controls="manual-entry" aria-selected="false">
+                <i class="fa-solid fa-pen-to-square text-info"></i>
+                <span>ثبت دستی سوابق گذشته</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="app-card-body p-4">
         <div class="tab-content" id="entryTabsContent">
             <!-- تب ثبت سریع -->
             <div class="tab-pane fade show active" id="quick-entry" role="tabpanel" aria-labelledby="quick-tab">
-                <p class="text-muted small mb-3">اگر آخرین کارکرد پروژه باز باشد، زمان ثبت‌شده به عنوان خروج ثبت می‌شود؛ در غیر این صورت ورود جدید ایجاد خواهد شد.</p>
+                <div class="text-muted small mb-3 d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-circle-info text-primary"></i>
+                    <span>اگر آخرین کارکرد پروژه انتخابی باز باشد، با زدن دکمه زمان خروج ثبت می‌شود؛ در غیر این صورت کارکرد جدید آغاز خواهد شد.</span>
+                </div>
                 <form method="post">
                     {% csrf_token %}
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <label for="{{ time_entry_form.project.id_for_label }}" class="form-label fw-bold">پروژه</label>
+                    <div class="row g-3 align-items-end">
+                        <div class="col-lg-4 col-md-6">
+                            <label for="{{ time_entry_form.project.id_for_label }}" class="form-label">
+                                <i class="fa-solid fa-folder-open text-muted"></i>
+                                <span>انتخاب پروژه</span>
+                            </label>
                             {{ time_entry_form.project }}
                         </div>
-                        <div class="col-md-4">
-                            <label for="{{ time_entry_form.entry_time.id_for_label }}" class="form-label fw-bold">زمان</label>
+                        <div class="col-lg-3 col-md-6">
+                            <label for="{{ time_entry_form.entry_time.id_for_label }}" class="form-label">
+                                <i class="fa-regular fa-calendar-days text-muted"></i>
+                                <span>تاریخ و ساعت</span>
+                            </label>
                             {{ time_entry_form.entry_time }}
                         </div>
-                        <div class="col-md-4">
-                            <label for="{{ time_entry_form.description.id_for_label }}" class="form-label fw-bold">توضیحات</label>
+                        <div class="col-lg-3 col-md-8">
+                            <label for="{{ time_entry_form.description.id_for_label }}" class="form-label">
+                                <i class="fa-solid fa-pen-nib text-muted"></i>
+                                <span>توضیحات (اختیاری)</span>
+                            </label>
                             {{ time_entry_form.description }}
                         </div>
-                        <div class="col-12 mt-4 text-start">
-                            <button type="submit" name="action" value="quick_entry" class="btn btn-success px-4">
-                                ⏱️ ثبت زمان ورود / خروج
+                        <div class="col-lg-2 col-md-4 text-start">
+                            <button type="submit" name="action" value="quick_entry" class="btn btn-primary-custom w-100">
+                                <i class="fa-solid fa-stopwatch"></i>
+                                <span>ثبت زمان</span>
                             </button>
                         </div>
                     </div>
                 </form>
             </div>
 
-            <!-- تب ثبت دستی سابقه گذشته -->
+            <!-- تب ثبت دستی گذشته -->
             <div class="tab-pane fade" id="manual-entry" role="tabpanel" aria-labelledby="manual-tab">
-                <p class="text-muted small mb-3">برای ثبت کارهای قبلی که فراموش شده‌اند یا تنظیم سابقه دقیق با زمان شروع و پایان مشخص.</p>
+                <div class="text-muted small mb-3 d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left text-info"></i>
+                    <span>مناسب برای وارد کردن کارهایی که در روزهای گذشته انجام شده‌اند یا زمان ورود و خروج آن‌ها مشخص است.</span>
+                </div>
                 {% if manual_form.non_field_errors %}
-                    <div class="alert alert-danger py-2">
+                    <div class="alert alert-danger py-2 mb-3">
                         {% for error in manual_form.non_field_errors %}
-                            <div>{{ error }}</div>
+                            <div><i class="fa-solid fa-triangle-exclamation me-1"></i> {{ error }}</div>
                         {% endfor %}
                     </div>
                 {% endif %}
                 <form method="post">
                     {% csrf_token %}
-                    <div class="row g-3">
-                        <div class="col-md-3">
-                            <label for="{{ manual_form.project.id_for_label }}" class="form-label fw-bold">پروژه</label>
+                    <div class="row g-3 align-items-end">
+                        <div class="col-lg-3 col-md-6">
+                            <label for="{{ manual_form.project.id_for_label }}" class="form-label">
+                                <i class="fa-solid fa-folder-open text-muted"></i>
+                                <span>پروژه</span>
+                            </label>
                             {{ manual_form.project }}
                             {% if manual_form.project.errors %}
                                 <div class="text-danger small mt-1">{{ manual_form.project.errors.0 }}</div>
                             {% endif %}
                         </div>
-                        <div class="col-md-3">
-                            <label for="{{ manual_form.entry_time.id_for_label }}" class="form-label fw-bold">زمان شروع</label>
+                        <div class="col-lg-2 col-md-6">
+                            <label for="{{ manual_form.entry_time.id_for_label }}" class="form-label">
+                                <i class="fa-regular fa-calendar-check text-muted"></i>
+                                <span>زمان شروع</span>
+                            </label>
                             {{ manual_form.entry_time }}
                             {% if manual_form.entry_time.errors %}
                                 <div class="text-danger small mt-1">{{ manual_form.entry_time.errors.0 }}</div>
                             {% endif %}
                         </div>
-                        <div class="col-md-3">
-                            <label for="{{ manual_form.exit_time.id_for_label }}" class="form-label fw-bold">زمان پایان</label>
+                        <div class="col-lg-2 col-md-6">
+                            <label for="{{ manual_form.exit_time.id_for_label }}" class="form-label">
+                                <i class="fa-regular fa-calendar-xmark text-muted"></i>
+                                <span>زمان پایان</span>
+                            </label>
                             {{ manual_form.exit_time }}
                             {% if manual_form.exit_time.errors %}
                                 <div class="text-danger small mt-1">{{ manual_form.exit_time.errors.0 }}</div>
                             {% endif %}
                         </div>
-                        <div class="col-md-3">
-                            <label for="{{ manual_form.description.id_for_label }}" class="form-label fw-bold">توضیحات</label>
+                        <div class="col-lg-3 col-md-6">
+                            <label for="{{ manual_form.description.id_for_label }}" class="form-label">
+                                <i class="fa-solid fa-align-right text-muted"></i>
+                                <span>توضیحات کار</span>
+                            </label>
                             {{ manual_form.description }}
                             {% if manual_form.description.errors %}
                                 <div class="text-danger small mt-1">{{ manual_form.description.errors.0 }}</div>
                             {% endif %}
                         </div>
-                        <div class="col-12 mt-4 text-start">
-                            <button type="submit" name="action" value="manual_entry" class="btn btn-primary px-4">
-                                💾 ثبت دستی سابقه کاری
+                        <div class="col-lg-2 col-md-12 text-start">
+                            <button type="submit" name="action" value="manual_entry" class="btn btn-primary-custom w-100">
+                                <i class="fa-solid fa-floppy-disk"></i>
+                                <span>ثبت دستی</span>
                             </button>
                         </div>
                     </div>
@@ -107,52 +218,70 @@
     </div>
 </div>
 
-<!-- جدول ثبت‌های اخیر -->
-<div class="card shadow-sm border-0 rounded-3 mb-4">
-    <div class="card-header bg-light d-flex justify-content-between align-items-center py-3">
-        <h5 class="mb-0 fw-bold">📋 ثبت‌های اخیر زمان</h5>
-        <a href="{% url 'report' %}?start={{ start_date }}&end={{ end_date }}" class="btn btn-sm btn-info text-white">
-            📊 مشاهده و فیلتر گزارش کامل
+<!-- جدول ثبت‌های اخیر کارکرد -->
+<div class="app-card">
+    <div class="app-card-header bg-white">
+        <div class="d-flex align-items-center gap-2">
+            <span class="fs-5 text-primary"><i class="fa-solid fa-clock-rotate-left"></i></span>
+            <h2 class="h5 mb-0 fw-bold">سوابق اخیر ثبت زمان</h2>
+        </div>
+        <a href="{% url 'report' %}?start={{ start_date }}&end={{ end_date }}" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+            <span>مشاهده همه و فیلتر</span>
         </a>
     </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover text-center align-middle mb-0">
-                <thead class="table-light">
+
+    <div class="table-responsive">
+        <table class="table table-modern text-center align-middle">
+            <thead>
                 <tr>
-                    <th scope="col" style="width: 50px;">#</th>
-                    <th scope="col">پروژه</th>
-                    <th scope="col">زمان ورود</th>
-                    <th scope="col">زمان خروج</th>
-                    <th scope="col">مدت زمان</th>
-                    <th scope="col">توضیحات</th>
-                    <th scope="col" style="width: 150px;">عملیات</th>
+                    <th style="width: 50px;">#</th>
+                    <th>پروژه</th>
+                    <th>زمان ورود</th>
+                    <th>زمان خروج</th>
+                    <th>مدت زمان</th>
+                    <th>توضیحات</th>
+                    <th style="width: 120px;">عملیات</th>
                 </tr>
-                </thead>
-                <tbody>
+            </thead>
+            <tbody>
                 {% for entry in time_entries %}
                     <tr>
-                        <td>{{ forloop.counter }}</td>
-                        <td class="fw-bold">{{ entry.project.name }}</td>
-                        <td class="ltr">{{ entry.entry_time }}</td>
+                        <td class="text-muted small">{{ forloop.counter }}</td>
+                        <td class="fw-bold text-dark">
+                            <i class="fa-solid fa-folder text-muted me-1 small"></i>
+                            {{ entry.project.name }}
+                        </td>
+                        <td class="ltr text-muted small">{{ entry.entry_time }}</td>
                         <td class="ltr">
                             {% if entry.exit_time %}
-                                {{ entry.exit_time }}
+                                <span class="text-muted small">{{ entry.exit_time }}</span>
                             {% else %}
-                                <span class="badge bg-warning text-dark">⏳ در حال انجام</span>
+                                <span class="badge-status running">
+                                    <span class="pulse-indicator"></span>
+                                    <span>در حال کار...</span>
+                                </span>
                             {% endif %}
                         </td>
-                        <td>{{ entry.cal_duration|default:"-" }}</td>
-                        <td class="text-muted">{{ entry.description|default:"-" }}</td>
                         <td>
-                            <div class="btn-group btn-group-sm" role="group">
-                                <a href="{% url 'edit_time_entry' entry.id %}" class="btn btn-outline-primary" title="ویرایش">
-                                    ✏️ ویرایش
+                            {% if entry.cal_duration %}
+                                <span class="badge-duration">{{ entry.cal_duration }}</span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-muted small text-truncate" style="max-width: 200px;" title="{{ entry.description|default:'' }}">
+                            {{ entry.description|default:"-" }}
+                        </td>
+                        <td>
+                            <div class="d-inline-flex align-items-center gap-1" role="group">
+                                <a href="{% url 'edit_time_entry' entry.id %}" class="btn-action-icon btn-edit" title="ویرایش">
+                                    <i class="fa-solid fa-pen"></i>
                                 </a>
                                 <form method="post" action="{% url 'delete_time_entry' entry.id %}" class="d-inline" onsubmit="return confirm('آیا از حذف این رکورد مربوط به پروژه «{{ entry.project.name }}» اطمینان دارید؟');">
                                     {% csrf_token %}
-                                    <button type="submit" class="btn btn-outline-danger" title="حذف">
-                                        🗑️
+                                    <button type="submit" class="btn-action-icon btn-delete" title="حذف رکورد">
+                                        <i class="fa-solid fa-trash-can"></i>
                                     </button>
                                 </form>
                             </div>
@@ -160,12 +289,19 @@
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="7" class="py-4 text-muted">هنوز هیچ رکوردی برای شما ثبت نشده است.</td>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">
+                                    <i class="fa-regular fa-calendar-xmark"></i>
+                                </div>
+                                <h3 class="h6 fw-bold text-dark">هنوز هیچ سابقه‌ای ثبت نشده است</h3>
+                                <p class="small text-muted mb-0">از فرم بالای صفحه برای ثبت اولین زمان ورود خود استفاده نمایید.</p>
+                            </div>
+                        </td>
                     </tr>
                 {% endfor %}
-                </tbody>
-            </table>
-        </div>
+            </tbody>
+        </table>
     </div>
 </div>
 {% endblock %}
