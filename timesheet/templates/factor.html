@@ -83,7 +83,8 @@
             </div>
 
             <div class="text-center mt-4 no-print">
-                <a href="{% url 'home' %}" class="btn btn-secondary px-4">بازگشت به خانه</a>
+                <a href="{% if start_date and end_date and project %}{% url 'report' %}?start={{ start_date }}&end={{ end_date }}&project_id={{ project.id }}{% else %}{% url 'report' %}{% endif %}" class="btn btn-secondary px-4">بازگشت به گزارش</a>
+                <a href="{% url 'home' %}" class="btn btn-outline-secondary px-3 ms-2">بازگشت به خانه</a>
                 <button class="btn btn-success px-4 ms-2" onclick="window.print()">چاپ فاکتور</button>
             </div>
         </div>

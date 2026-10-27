@@ -140,3 +140,16 @@ class TimeEntryManualAndCrudTests(TestCase):
 
         # رکورد هنوز در دیتابیس موجود است
         self.assertTrue(TimeEntry.objects.filter(id=other_entry.id).exists())
+
+    def test_factor_page_back_to_report_link(self):
+        """دکمه بازگشت در صفحه فاکتور باید به صفحه گزارش با فیلترهای مشخص شده لینک داشته باشد"""
+        start_str = '1405-07-01'
+        end_str = '1405-08-05'
+        factor_url = reverse('factor', args=[start_str, end_str, self.project.id])
+
+        response = self.client.get(factor_url)
+        self.assertEqual(response.status_code, 200)
+
+        expected_report_url = f"{reverse('report')}?start={start_str}&end={end_str}&project_id={self.project.id}"
+        self.assertContains(response, expected_report_url)
+
