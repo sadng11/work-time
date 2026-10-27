@@ -153,3 +153,18 @@ class TimeEntryManualAndCrudTests(TestCase):
         expected_report_url = f"{reverse('report')}?start={start_str}&end={end_str}&project_id={self.project.id}"
         self.assertContains(response, expected_report_url)
 
+    def test_report_view_without_project_filter(self):
+        """صفحه گزارش بدون انتخاب پروژه نباید با خطای VariableDoesNotExist روبرو شود"""
+        entry = TimeEntry.objects.create(
+            user=self.user,
+            project=self.project,
+            entry_time=jdatetime.datetime(1405, 8, 2, 10, 0),
+            exit_time=jdatetime.datetime(1405, 8, 2, 12, 0),
+            description='تست گزارش ماه'
+        )
+        report_url = f"{reverse('report')}?start=1405-08-01&end=1405-08-05"
+        response = self.client.get(report_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'همه پروژه‌ها')
+        self.assertContains(response, self.project.name)
+

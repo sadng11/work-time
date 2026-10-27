@@ -95,8 +95,8 @@
             </div>
             <div>
                 <div class="kpi-title">پروژه مورد گزارش</div>
-                <div class="kpi-value fs-6 text-truncate" style="max-width: 220px;" title="{{ project.name|default:'همه پروژه‌ها' }}">
-                    {{ project.name|default:"همه پروژه‌ها" }}
+                <div class="kpi-value fs-6 text-truncate" style="max-width: 220px;" title="{% if project %}{{ project.name }}{% else %}همه پروژه‌ها{% endif %}">
+                    {% if project %}{{ project.name }}{% else %}همه پروژه‌ها{% endif %}
                 </div>
             </div>
         </div>
@@ -154,7 +154,7 @@
                         <td class="ltr text-muted small">{{ entry.entry_time|date:'Y-m-d H:i' }}</td>
                         <td class="fw-bold text-dark">
                             <i class="fa-solid fa-folder text-muted me-1 small"></i>
-                            {{ entry.project__name|default:project.name }}
+                            {{ entry.project__name|default:"-" }}
                         </td>
                         <td>
                             <span class="badge-duration">{{ entry.total_duration|default:"0" }}</span>
