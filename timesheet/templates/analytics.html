@@ -84,7 +84,7 @@
             <div class="overflow-hidden">
                 <div class="kpi-title">تخمین درآمد ماه جاری</div>
                 <div class="kpi-value fs-5 text-dark">
-                    {{ kpi.total_month_income|stringformat:",d" }} <span class="fs-6 fw-normal text-muted">ریال</span>
+                    {{ kpi.total_month_income_formatted }} <span class="fs-6 fw-normal text-muted">ریال</span>
                 </div>
                 <div class="text-muted small text-truncate mt-1" title="پروژه برتر: {{ kpi.top_project_name }}">
                     برتر: {{ kpi.top_project_name }}
@@ -188,11 +188,14 @@
 <script src="{% static 'js/chart.min.js' %}"></script>
 
 <!-- داده‌های دریافتی از سرور جنگو به صورت امن -->
-{{ chart_json|json_script:"analyticsData" }}
+{{ chart_data|json_script:"analyticsData" }}
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-        const rawData = JSON.parse(document.getElementById("analyticsData").textContent);
+        let rawData = JSON.parse(document.getElementById("analyticsData").textContent);
+        if (typeof rawData === "string") {
+            rawData = JSON.parse(rawData);
+        }
 
         // تنظیمات سراسری ظاهر Chart.js برای فونت فارسی و اعداد فارسی
         Chart.defaults.font.family = "'IRANSansWeb(FaNum)', 'Segoe UI', Tahoma, sans-serif";

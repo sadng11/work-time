@@ -248,11 +248,10 @@ def factor(request, start=None, end=None, project=None):
 def analytics(request):
     """صفحه گزارش تحلیلی، نمودارها و شاخص‌های کلیدی عملکرد"""
     context = get_analytics_context(request.user)
-    chart_json = json.dumps({
+    context['chart_data'] = {
         'weekly': context['weekly_chart'],
         'projects': context['project_chart'],
         'monthly': context['monthly_chart'],
-    }, ensure_ascii=False)
-    context['chart_json'] = chart_json
+    }
     return render(request, 'analytics.html', context)
 

@@ -196,8 +196,10 @@ def get_analytics_context(user):
             'active_work_days': active_work_days,
             'busiest_day_label': busiest_day_label,
             'total_month_income': total_month_income,
+            'total_month_income_formatted': f"{total_month_income:,}",
             'top_project_name': top_project_name,
             'top_project_income': top_project_income,
+            'top_project_income_formatted': f"{top_project_income:,}",
         },
         'weekly_chart': {
             'labels': weekly_labels,
