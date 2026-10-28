@@ -1,0 +1,399 @@
+{% extends 'base.html' %}
+{% load i18n static %}
+
+{% block title %}تحلیل و آمار کارکرد | سامانه ساعت کاری{% endblock %}
+
+{% block content %}
+<!-- هدر صفحه تحلیل و آمار -->
+<div class="row align-items-center mb-4">
+    <div class="col-md-8">
+        <h1 class="h3 fw-bold text-dark mb-1">
+            <i class="fa-solid fa-chart-column text-primary me-2"></i>
+            تحلیل عملکرد و آمار کارکرد
+        </h1>
+        <p class="text-muted small mb-0">گزارش تصویری ساعات کاری، سهم پروژه‌ها و ارزیابی درآمد در ماه {{ current_month_name }}</p>
+    </div>
+    <div class="col-md-4 text-md-start mt-3 mt-md-0 d-flex justify-content-md-end gap-2">
+        <a href="{% url 'report' %}" class="btn btn-secondary-custom">
+            <i class="fa-solid fa-filter text-primary"></i>
+            <span>فیلتر و صدور فاکتور</span>
+        </a>
+        <a href="{% url 'home' %}" class="btn btn-secondary-custom">
+            <i class="fa-solid fa-house"></i>
+            <span>داشبورد</span>
+        </a>
+    </div>
+</div>
+
+<!-- ۴ کارت شاخص‌های کلیدی عملکرد ماه جاری (KPI Cards) -->
+<div class="row g-3 mb-4">
+    <!-- مجموع ساعت کارکرد ماه -->
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card" style="border-right: 4px solid var(--color-primary);">
+            <div class="kpi-icon primary">
+                <i class="fa-solid fa-hourglass-half"></i>
+            </div>
+            <div>
+                <div class="kpi-title">مجموع کارکرد ماه ({{ current_month_name }})</div>
+                <div class="kpi-value text-success ltr text-end">
+                    {{ kpi.total_month_hours }} <span class="fs-6 fw-normal text-muted">ساعت</span>
+                </div>
+                <div class="text-muted small mt-1">در {{ kpi.active_work_days }} روز کاری فعال</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- میانگین ساعت روزانه -->
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card" style="border-right: 4px solid var(--color-info);">
+            <div class="kpi-icon info">
+                <i class="fa-solid fa-business-time"></i>
+            </div>
+            <div>
+                <div class="kpi-title">میانگین روزانه در روزهای کاری</div>
+                <div class="kpi-value text-info ltr text-end">
+                    {{ kpi.daily_avg_hours }} <span class="fs-6 fw-normal text-muted">ساعت / روز</span>
+                </div>
+                <div class="text-muted small mt-1">محاسبه در روزهای با ثبت کار</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- پرکارترین روز ماه -->
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card" style="border-right: 4px solid var(--color-warning);">
+            <div class="kpi-icon warning">
+                <i class="fa-solid fa-fire text-warning"></i>
+            </div>
+            <div class="overflow-hidden">
+                <div class="kpi-title">پرکارترین روز این ماه</div>
+                <div class="kpi-value fs-6 text-truncate" title="{{ kpi.busiest_day_label }}">
+                    {{ kpi.busiest_day_label }}
+                </div>
+                <div class="text-muted small mt-1">بیشترین رکورد زمانی ثبت‌شده</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- تخمین درآمد کل ماه -->
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card" style="border-right: 4px solid #10b981;">
+            <div class="kpi-icon primary">
+                <i class="fa-solid fa-coins"></i>
+            </div>
+            <div class="overflow-hidden">
+                <div class="kpi-title">تخمین درآمد ماه جاری</div>
+                <div class="kpi-value fs-5 text-dark">
+                    {{ kpi.total_month_income|stringformat:",d" }} <span class="fs-6 fw-normal text-muted">ریال</span>
+                </div>
+                <div class="text-muted small text-truncate mt-1" title="پروژه برتر: {{ kpi.top_project_name }}">
+                    برتر: {{ kpi.top_project_name }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ردیف نمودار هفتگی و دونات سهم پروژه‌ها -->
+<div class="row g-4 mb-4">
+    <!-- نمودار میله‌ای ۷ روز اخیر -->
+    <div class="col-lg-7">
+        <div class="app-card h-100">
+            <div class="app-card-header bg-white">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-chart-simple text-primary"></i>
+                    <h2 class="h6 mb-0 fw-bold">توزیع ساعات کاری در ۷ روز گذشته</h2>
+                </div>
+                <span class="badge bg-light text-secondary border px-2 py-1 rounded-pill small">
+                    بر اساس روز
+                </span>
+            </div>
+            <div class="app-card-body p-4">
+                <div style="position: relative; height: 300px; width: 100%;">
+                    <canvas id="weeklyChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- نمودار دونات سهم پروژه‌ها -->
+    <div class="col-lg-5">
+        <div class="app-card h-100">
+            <div class="app-card-header bg-white">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-chart-pie text-success"></i>
+                    <h2 class="h6 mb-0 fw-bold">سهم پروژه‌ها در ماه جاری</h2>
+                </div>
+                <span class="badge bg-light text-secondary border px-2 py-1 rounded-pill small">
+                    {{ project_chart.labels|length }} پروژه فعال
+                </span>
+            </div>
+            <div class="app-card-body p-4 d-flex flex-column justify-content-center">
+                {% if project_chart.labels %}
+                    <div style="position: relative; height: 210px; width: 100%;" class="mb-3">
+                        <canvas id="projectChart"></canvas>
+                    </div>
+                    <!-- لیست راهنمای درصدها -->
+                    <div class="d-flex flex-column gap-2 mt-2 pt-2 border-top">
+                        {% for item in project_chart.items %}
+                            <div class="d-flex align-items-center justify-content-between small">
+                                <div class="d-flex align-items-center gap-2 text-truncate" style="max-width: 60%;">
+                                    <span style="width: 10px; height: 10px; border-radius: 50%; background-color: {{ item.color }}; display: inline-block; flex-shrink: 0;"></span>
+                                    <span class="text-dark fw-bold text-truncate">{{ item.label }}</span>
+                                </div>
+                                <div class="d-flex align-items-center gap-2 ltr">
+                                    <span class="text-muted">{{ item.hours }} ساعت</span>
+                                    <span class="badge bg-light text-dark border px-2 py-0 rounded-pill fw-bold">
+                                        {{ item.percentage }}%
+                                    </span>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state py-4">
+                        <div class="empty-state-icon text-muted">
+                            <i class="fa-solid fa-chart-pie"></i>
+                        </div>
+                        <h3 class="h6 fw-bold text-dark">سابقه‌ای در ماه جاری یافت نشد</h3>
+                        <p class="small text-muted mb-0">با ثبت ساعت کارکرد، نمودار سهم پروژه‌ها نمایش داده خواهد شد.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- نمودار روند و مقایسه ۶ ماه اخیر -->
+<div class="app-card mb-4">
+    <div class="app-card-header bg-white">
+        <div class="d-flex align-items-center gap-2">
+            <i class="fa-solid fa-arrow-trend-up text-info"></i>
+            <h2 class="h6 mb-0 fw-bold">روند ساعات کاری و درآمد در ۶ ماه گذشته</h2>
+        </div>
+        <span class="badge bg-light text-secondary border px-2 py-1 rounded-pill small">
+            مقایسه کارکرد و درآمد
+        </span>
+    </div>
+    <div class="app-card-body p-4">
+        <div style="position: relative; height: 340px; width: 100%;">
+            <canvas id="monthlyTrendChart"></canvas>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_script %}
+<!-- بارگذاری لوکال کتابخانه Chart.js -->
+<script src="{% static 'js/chart.min.js' %}"></script>
+
+<!-- داده‌های دریافتی از سرور جنگو به صورت امن -->
+{{ chart_json|json_script:"analyticsData" }}
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const rawData = JSON.parse(document.getElementById("analyticsData").textContent);
+
+        // تنظیمات سراسری ظاهر Chart.js برای فونت فارسی و اعداد فارسی
+        Chart.defaults.font.family = "'IRANSansWeb(FaNum)', 'Segoe UI', Tahoma, sans-serif";
+        Chart.defaults.font.size = 12;
+        Chart.defaults.color = "#475569";
+        Chart.defaults.plugins.tooltip.rtl = true;
+        Chart.defaults.plugins.tooltip.textDirection = 'rtl';
+        Chart.defaults.plugins.tooltip.padding = 10;
+        Chart.defaults.plugins.tooltip.cornerRadius = 8;
+
+        // -------------------------------------------------------------
+        // ۱. نمودار میله‌ای ۷ روز اخیر (Weekly Bar Chart)
+        // -------------------------------------------------------------
+        const weeklyCtx = document.getElementById("weeklyChart");
+        if (weeklyCtx && rawData.weekly) {
+            new Chart(weeklyCtx, {
+                type: "bar",
+                data: {
+                    labels: rawData.weekly.labels,
+                    datasets: [{
+                        label: "ساعت کاری",
+                        data: rawData.weekly.hours,
+                        backgroundColor: "rgba(5, 150, 105, 0.8)",
+                        borderColor: "#059669",
+                        borderWidth: 1.5,
+                        borderRadius: 8,
+                        hoverBackgroundColor: "#047857",
+                        barPercentage: 0.6,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function (ctx) {
+                                    return `کارکرد: ${ctx.parsed.y} ساعت`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: "rgba(226, 232, 240, 0.7)" },
+                            ticks: {
+                                callback: function (val) {
+                                    return val + " ساعت";
+                                }
+                            }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        // -------------------------------------------------------------
+        // ۲. نمودار دونات سهم پروژه‌ها (Project Donut Chart)
+        // -------------------------------------------------------------
+        const projectCtx = document.getElementById("projectChart");
+        if (projectCtx && rawData.projects && rawData.projects.labels.length > 0) {
+            new Chart(projectCtx, {
+                type: "doughnut",
+                data: {
+                    labels: rawData.projects.labels,
+                    datasets: [{
+                        data: rawData.projects.hours,
+                        backgroundColor: rawData.projects.colors,
+                        borderWidth: 2,
+                        borderColor: "#ffffff",
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: "65%",
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function (ctx) {
+                                    const hrs = ctx.parsed;
+                                    const pct = rawData.projects.percentages[ctx.dataIndex];
+                                    return ` ${ctx.label}: ${hrs} ساعت (${pct}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // -------------------------------------------------------------
+        // ۳. نمودار روند و مقایسه ۶ ماه اخیر (Monthly Trend Chart)
+        // -------------------------------------------------------------
+        const monthlyCtx = document.getElementById("monthlyTrendChart");
+        if (monthlyCtx && rawData.monthly) {
+            // تبدیل درآمد به میلیون تومان برای مقیاس مناسب در نمودار
+            const incomeInMillions = rawData.monthly.income.map(val => Math.round((val / 1000000) * 10) / 10);
+
+            new Chart(monthlyCtx, {
+                type: "bar",
+                data: {
+                    labels: rawData.monthly.labels,
+                    datasets: [
+                        {
+                            type: "bar",
+                            label: "مجموع ساعت کاری",
+                            data: rawData.monthly.hours,
+                            backgroundColor: "rgba(37, 99, 235, 0.75)",
+                            borderColor: "#2563eb",
+                            borderWidth: 1.5,
+                            borderRadius: 6,
+                            yAxisID: "yHours",
+                            order: 2,
+                            barPercentage: 0.55,
+                        },
+                        {
+                            type: "line",
+                            label: "تخمین درآمد (میلیون ریال)",
+                            data: incomeInMillions,
+                            borderColor: "#10b981",
+                            backgroundColor: "rgba(16, 185, 129, 0.15)",
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.35,
+                            pointBackgroundColor: "#10b981",
+                            pointBorderColor: "#ffffff",
+                            pointBorderWidth: 2,
+                            pointRadius: 5,
+                            pointHoverRadius: 7,
+                            yAxisID: "yIncome",
+                            order: 1,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            position: "top",
+                            labels: {
+                                usePointStyle: true,
+                                padding: 15,
+                                font: { size: 12, weight: "bold" }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (ctx) {
+                                    if (ctx.dataset.yAxisID === "yHours") {
+                                        return `ساعت کاری: ${ctx.parsed.y} ساعت`;
+                                    } else {
+                                        const origVal = rawData.monthly.income[ctx.dataIndex];
+                                        return `درآمد تخمینی: ${origVal.toLocaleString()} ریال`;
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        yHours: {
+                            type: "linear",
+                            position: "right",
+                            beginAtZero: true,
+                            grid: { color: "rgba(226, 232, 240, 0.7)" },
+                            title: {
+                                display: true,
+                                text: "ساعات کارکرد (ساعت)",
+                                font: { weight: "bold" }
+                            }
+                        },
+                        yIncome: {
+                            type: "linear",
+                            position: "left",
+                            beginAtZero: true,
+                            grid: { drawOnChartArea: false },
+                            title: {
+                                display: true,
+                                text: "درآمد (میلیون ریال)",
+                                font: { weight: "bold" }
+                            }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

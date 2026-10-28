@@ -293,5 +293,38 @@ class TimeEntryManualAndCrudTests(TestCase):
         self.assertContains(response, 'توقف و ثبت کارکرد')
         self.assertContains(response, self.project.name)
 
+    def test_analytics_view_status_and_content(self):
+        """صفحه تحلیل و آمار باید با وضعیت ۲۰۰ باز شده و نمودارها و شاخص‌ها را لود کند"""
+        # ایجاد یک رکورد برای این ماه
+        TimeEntry.objects.create(
+            user=self.user,
+            project=self.project,
+            entry_time=jdatetime.datetime.now() - jdatetime.timedelta(hours=2),
+            exit_time=jdatetime.datetime.now(),
+            description='کار برای تحلیل'
+        )
+        response = self.client.get(reverse('analytics'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'تحلیل عملکرد و آمار کارکرد')
+        self.assertContains(response, 'weeklyChart')
+        self.assertContains(response, 'projectChart')
+        self.assertContains(response, 'monthlyTrendChart')
+        self.assertContains(response, 'chart.min.js')
+        self.assertContains(response, 'analyticsData')
+
+    def test_analytics_context_with_no_entries(self):
+        """تابع محاسبات آماری برای کاربر جدید بدون رکورد نباید دچار خطای تقسیم بر صفر شود"""
+        from timesheet.analytics import get_analytics_context
+        # ساخت کاربر بدون رکورد
+        new_user = User.objects.create_user(username='empty_user', password='password123')
+        data = get_analytics_context(new_user)
+        self.assertEqual(data['kpi']['total_month_hours'], 0.0)
+        self.assertEqual(data['kpi']['daily_avg_hours'], 0.0)
+        self.assertEqual(data['kpi']['active_work_days'], 0)
+        self.assertEqual(data['kpi']['total_month_income'], 0)
+        self.assertEqual(len(data['weekly_chart']['hours']), 7)
+        self.assertEqual(len(data['monthly_chart']['hours']), 6)
+
+
 
 

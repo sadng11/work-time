@@ -11,6 +11,8 @@ from num2fawords import words
 from .models import Project, TimeEntry
 from .forms import TimeEntryForm, ManualTimeEntryForm
 from .export import export_daily_report_to_excel
+from .analytics import get_analytics_context
+import json
 
 
 @login_required
@@ -240,3 +242,17 @@ def factor(request, start=None, end=None, project=None):
         "today": jdatetime.datetime.now(),
         "user": request.user
     })
+
+
+@login_required
+def analytics(request):
+    """صفحه گزارش تحلیلی، نمودارها و شاخص‌های کلیدی عملکرد"""
+    context = get_analytics_context(request.user)
+    chart_json = json.dumps({
+        'weekly': context['weekly_chart'],
+        'projects': context['project_chart'],
+        'monthly': context['monthly_chart'],
+    }, ensure_ascii=False)
+    context['chart_json'] = chart_json
+    return render(request, 'analytics.html', context)
+

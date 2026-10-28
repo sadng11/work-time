@@ -33,6 +33,10 @@
                         <i class="fa-solid fa-chart-pie"></i>
                         <span>گزارشات و فیلتر</span>
                     </a>
+                    <a href="{% url 'analytics' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'analytics' %}active{% endif %}">
+                        <i class="fa-solid fa-chart-column"></i>
+                        <span>تحلیل و آمار</span>
+                    </a>
                     <a href="/Sadng1044/" class="nav-link-custom" target="_blank" title="ورود به پنل مدیریت">
                         <i class="fa-solid fa-sliders"></i>
                         <span>مدیریت</span>
@@ -65,6 +69,10 @@
                 <a href="{% url 'report' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'report' %}active{% endif %}">
                     <i class="fa-solid fa-chart-pie"></i>
                     <span>گزارشات و فیلتر</span>
+                </a>
+                <a href="{% url 'analytics' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'analytics' %}active{% endif %}">
+                    <i class="fa-solid fa-chart-column"></i>
+                    <span>تحلیل و آمار</span>
                 </a>
                 <a href="/Sadng1044/" class="nav-link-custom" target="_blank">
                     <i class="fa-solid fa-sliders"></i>
