@@ -84,7 +84,7 @@
             <div class="overflow-hidden">
                 <div class="kpi-title">تخمین درآمد ماه جاری</div>
                 <div class="kpi-value fs-5 text-dark">
-                    {{ kpi.total_month_income_formatted }} <span class="fs-6 fw-normal text-muted">ریال</span>
+                    {{ kpi.total_month_income_formatted }} <span class="fs-6 fw-normal text-muted">تومان</span>
                 </div>
                 <div class="text-muted small text-truncate mt-1" title="پروژه برتر: {{ kpi.top_project_name }}">
                     برتر: {{ kpi.top_project_name }}
@@ -321,7 +321,7 @@
                         },
                         {
                             type: "line",
-                            label: "تخمین درآمد (میلیون ریال)",
+                            label: "تخمین درآمد (میلیون تومان)",
                             data: incomeInMillions,
                             borderColor: "#10b981",
                             backgroundColor: "rgba(16, 185, 129, 0.15)",
@@ -361,7 +361,7 @@
                                         return `ساعت کاری: ${ctx.parsed.y} ساعت`;
                                     } else {
                                         const origVal = rawData.monthly.income[ctx.dataIndex];
-                                        return `درآمد تخمینی: ${origVal.toLocaleString()} ریال`;
+                                        return `درآمد تخمینی: ${origVal.toLocaleString()} تومان`;
                                     }
                                 }
                             }
@@ -386,7 +386,7 @@
                             grid: { drawOnChartArea: false },
                             title: {
                                 display: true,
-                                text: "درآمد (میلیون ریال)",
+                                text: "درآمد (میلیون تومان)",
                                 font: { weight: "bold" }
                             }
                         },
