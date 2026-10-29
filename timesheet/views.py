@@ -52,10 +52,17 @@ def home(request):
         manual_form = ManualTimeEntryForm(user=request.user)
 
     projects = Project.objects.filter(user=request.user)
-    time_entries = TimeEntry.objects.filter(user=request.user).order_by('-entry_time')[:15]
+    time_entries = TimeEntry.objects.filter(user=request.user).select_related('project').order_by('-entry_time')[:15]
     today = jdatetime.date.today()
     start_date = jdatetime.date(today.year, today.month, 1).strftime('%Y-%m-%d')
     end_date = today.strftime('%Y-%m-%d')
+
+    home_total_seconds = sum(
+        (e.duration.total_seconds() for e in time_entries if e.duration), 0.0
+    )
+    home_total_hours = round(home_total_seconds / 3600, 2)
+    home_total_fee = sum(e.fee for e in time_entries)
+    home_total_fee_formatted = f"{home_total_fee:,}"
 
     active_timer = TimeEntry.objects.filter(user=request.user, exit_time__isnull=True).order_by('-entry_time').first()
     active_timer_elapsed_seconds = 0
@@ -69,6 +76,9 @@ def home(request):
         'start_date': start_date,
         'end_date': end_date,
         'time_entries': time_entries,
+        'home_total_hours': home_total_hours,
+        'home_total_fee': home_total_fee,
+        'home_total_fee_formatted': home_total_fee_formatted,
         'active_timer': active_timer,
         'active_timer_elapsed_seconds': active_timer_elapsed_seconds,
     })
@@ -165,13 +175,26 @@ def report(request):
                                            entry_time__date__lte=query_params.get('end'))
     if query_params.get('project_id'):
         time_entries = time_entries.filter(project_id=query_params.get('project_id'))
-    daily_report = time_entries.values('entry_time', 'project__name', 'description', 'id').annotate(
-        total_duration=Sum('duration')).order_by(
-        '-entry_time')
+    daily_report = time_entries.values(
+        'entry_time', 'project__name', 'description', 'id', 'project__unit_price'
+    ).annotate(total_duration=Sum('duration')).order_by('-entry_time')
 
     deltas = []
+    daily_report_list = []
+    total_fee = 0
     for item in daily_report:
-        deltas.append(item['total_duration'])
+        dur = item['total_duration']
+        deltas.append(dur)
+        sec = dur.total_seconds() if dur else 0
+        hrs = sec / 3600
+        rate = item.get('project__unit_price') or 0
+        fee = round(hrs * rate)
+        item_dict = dict(item)
+        item_dict['fee'] = fee
+        item_dict['formatted_fee'] = f"{fee:,}"
+        total_fee += fee
+        daily_report_list.append(item_dict)
+
     total_duration = sum(deltas, timedelta())
     change_day_to_hour = 0
     if total_duration.days:
@@ -180,14 +203,16 @@ def report(request):
     if total_duration.seconds:
         change_second_to_hour = total_duration.seconds / 3600
     total_hours = round(change_second_to_hour + change_day_to_hour, 2)
+    formatted_total_fee = f"{total_fee:,}"
     project = None
     if query_params.get('project_id'):
         project = Project.objects.filter(id=query_params.get('project_id')).first()
 
     if query_params.get('export') == 'excel':
         return export_daily_report_to_excel(
-            daily_report=daily_report,
+            daily_report=daily_report_list,
             total_hours=total_hours,
+            total_fee=total_fee,
             start=query_params.get('start'),
             end=query_params.get('end'),
             project=project,
@@ -195,14 +220,16 @@ def report(request):
 
     project_list = Project.objects.values('id', 'name')
     return render(request, 'report.html', {
-        'daily_report': daily_report,
+        'daily_report': daily_report_list,
         'total_hours': total_hours,
-        "total_duration": total_duration,
-        "start": query_params.get('start'),
-        "end": query_params.get('end'),
-        "project_id": query_params.get('project_id'),
-        "project": project,
-        "project_list": project_list,
+        'total_duration': total_duration,
+        'total_fee': total_fee,
+        'formatted_total_fee': formatted_total_fee,
+        'start': query_params.get('start'),
+        'end': query_params.get('end'),
+        'project_id': query_params.get('project_id'),
+        'project': project,
+        'project_list': project_list,
     })
 
 

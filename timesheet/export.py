@@ -8,7 +8,7 @@ import jdatetime
 from django.http import HttpResponse
 
 
-def export_daily_report_to_excel(daily_report, total_hours, start=None, end=None, project=None):
+def export_daily_report_to_excel(daily_report, total_hours, total_fee=0, start=None, end=None, project=None):
     """
     تولید فایل اکسل زیبا و راست‌چین از سوابق گزارش فیلترشده کارکرد
     """
@@ -49,7 +49,7 @@ def export_daily_report_to_excel(daily_report, total_hours, start=None, end=None
     align_right = Alignment(horizontal="right", vertical="center")
 
     # ردیف عنوان گزارش
-    ws.merge_cells("A1:G1")
+    ws.merge_cells("A1:H1")
     t_cell = ws["A1"]
     t_cell.value = "گزارش ساعات کاری و سوابق کارکرد"
     t_cell.font = title_font
@@ -60,7 +60,7 @@ def export_daily_report_to_excel(daily_report, total_hours, start=None, end=None
     proj_name = project.name if project else "همه پروژه‌ها"
     date_range = f"{start} تا {end}" if (start and end) else "کل سوابق ثبت‌شده"
     now_str = jdatetime.datetime.now().strftime("%Y/%m/%d %H:%M")
-    ws.merge_cells("A2:G2")
+    ws.merge_cells("A2:H2")
     s_cell = ws["A2"]
     s_cell.value = f"پروژه: {proj_name} | بازه تاریخی: {date_range} | زمان استخراج: {now_str}"
     s_cell.font = sub_font
@@ -75,6 +75,7 @@ def export_daily_report_to_excel(daily_report, total_hours, start=None, end=None
         "پروژه",
         "مدت کارکرد (زمان)",
         "کارکرد (ساعت)",
+        "مبلغ (تومان)",
         "توضیحات",
     ]
     ws.append([])  # ردیف ۳ خالی برای فاصله
@@ -110,6 +111,11 @@ def export_daily_report_to_excel(daily_report, total_hours, start=None, end=None
             dur_str = "00:00:00"
             hours_val = 0.0
 
+        fee_val = entry.get("fee")
+        if fee_val is None:
+            rate = entry.get("project__unit_price") or 0
+            fee_val = round(hours_val * rate)
+
         project_str = entry.get("project__name") or "-"
         desc_str = entry.get("description") or ""
 
@@ -120,6 +126,7 @@ def export_daily_report_to_excel(daily_report, total_hours, start=None, end=None
             project_str,
             dur_str,
             hours_val,
+            fee_val,
             desc_str,
         ]
         ws.append(row_data)
@@ -136,6 +143,9 @@ def export_daily_report_to_excel(daily_report, total_hours, start=None, end=None
             elif col_idx == 6:
                 c.alignment = align_center
                 c.number_format = "0.00"
+            elif col_idx == 7:
+                c.alignment = align_center
+                c.number_format = "#,##0"
             else:
                 c.alignment = align_right
 
@@ -145,7 +155,7 @@ def export_daily_report_to_excel(daily_report, total_hours, start=None, end=None
     summary_row = current_row
     ws.merge_cells(start_row=summary_row, start_column=1, end_row=summary_row, end_column=5)
     sum_label = ws.cell(row=summary_row, column=1)
-    sum_label.value = "جمع کل ساعات کاری محاسبه‌شده:"
+    sum_label.value = "جمع کل کارکرد و مبلغ:"
     sum_label.font = total_font
     sum_label.alignment = align_right
 
@@ -155,8 +165,14 @@ def export_daily_report_to_excel(daily_report, total_hours, start=None, end=None
     sum_val.alignment = align_center
     sum_val.number_format = "0.00"
 
+    sum_fee = ws.cell(row=summary_row, column=7)
+    sum_fee.value = total_fee
+    sum_fee.font = total_font
+    sum_fee.alignment = align_center
+    sum_fee.number_format = "#,##0"
+
     ws.row_dimensions[summary_row].height = 24
-    for col_idx in range(1, 8):
+    for col_idx in range(1, 9):
         c = ws.cell(row=summary_row, column=col_idx)
         c.fill = total_fill
         c.border = total_border
@@ -169,7 +185,8 @@ def export_daily_report_to_excel(daily_report, total_hours, start=None, end=None
         "D": 24,  # پروژه
         "E": 18,  # مدت زمان
         "F": 16,  # ساعت
-        "G": 35,  # توضیحات
+        "G": 20,  # مبلغ (تومان)
+        "H": 35,  # توضیحات
     }
     for col_letter, width in column_widths.items():
         ws.column_dimensions[col_letter].width = width

@@ -317,6 +317,7 @@
                     <th>زمان ورود</th>
                     <th>زمان خروج</th>
                     <th>مدت زمان</th>
+                    <th>مبلغ (تومان)</th>
                     <th>توضیحات</th>
                     <th style="width: 120px;">عملیات</th>
                 </tr>
@@ -335,8 +336,8 @@
                                 <span class="text-muted small">{{ entry.exit_time|date:"Y-m-d H:i:s" }}</span>
                             {% else %}
                                 <span class="badge-status running">
-                                    <span class="pulse-indicator"></span>
-                                    <span>در حال کار...</span>
+                                     <span class="pulse-indicator"></span>
+                                     <span>در حال کار...</span>
                                 </span>
                             {% endif %}
                         </td>
@@ -346,6 +347,9 @@
                             {% else %}
                                 <span class="text-muted">-</span>
                             {% endif %}
+                        </td>
+                        <td class="fw-bold text-dark text-nowrap">
+                            {{ entry.formatted_fee }} <span class="small text-muted fw-normal">تومان</span>
                         </td>
                         <td class="text-muted small text-truncate" style="max-width: 200px;" title="{{ entry.description|default:'' }}">
                             {{ entry.description|default:"-" }}
@@ -383,7 +387,7 @@
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="7">
+                        <td colspan="8">
                             <div class="empty-state">
                                 <div class="empty-state-icon">
                                     <i class="fa-regular fa-calendar-xmark"></i>
@@ -395,6 +399,16 @@
                     </tr>
                 {% endfor %}
             </tbody>
+            {% if time_entries %}
+                <tfoot class="bg-light border-top">
+                    <tr class="fw-bold">
+                        <td colspan="4" class="text-end pe-4 py-3">جمع کل سوابق اخیر:</td>
+                        <td class="ltr py-3 text-success fs-6">{{ home_total_hours|floatformat:"-2" }} ساعت</td>
+                        <td class="py-3 text-primary fs-6">{{ home_total_fee_formatted }} تومان</td>
+                        <td colspan="2"></td>
+                    </tr>
+                </tfoot>
+            {% endif %}
         </table>
     </div>
 </div>

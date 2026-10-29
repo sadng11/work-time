@@ -72,9 +72,9 @@
     </div>
 </div>
 
-<!-- ردیف کارت خلاصه آماری مجموع ساعات -->
+<!-- ردیف کارت خلاصه آماری مجموع ساعات و مبالغ -->
 <div class="row g-3 mb-4">
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="kpi-card" style="border-right: 4px solid var(--color-primary);">
             <div class="kpi-icon primary">
                 <i class="fa-solid fa-hourglass-half"></i>
@@ -88,7 +88,21 @@
         </div>
     </div>
 
-    <div class="col-md-4">
+    <div class="col-md-3">
+        <div class="kpi-card" style="border-right: 4px solid #059669;">
+            <div class="kpi-icon primary" style="background-color: #d1fae5; color: #059669;">
+                <i class="fa-solid fa-coins"></i>
+            </div>
+            <div>
+                <div class="kpi-title">مجموع مبلغ محاسبه‌شده</div>
+                <div class="kpi-value text-primary fs-6 text-end">
+                    {{ formatted_total_fee }} <span class="fs-6 fw-normal text-muted">تومان</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
         <div class="kpi-card">
             <div class="kpi-icon info">
                 <i class="fa-solid fa-briefcase"></i>
@@ -102,7 +116,7 @@
         </div>
     </div>
 
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="kpi-card">
             <div class="kpi-icon warning">
                 <i class="fa-regular fa-calendar-days"></i>
@@ -150,6 +164,7 @@
                     <th>تاریخ و ساعت ورود</th>
                     <th>پروژه</th>
                     <th>مدت کارکرد (ساعت)</th>
+                    <th>مبلغ (تومان)</th>
                     <th>توضیحات</th>
                     <th style="width: 120px;">عملیات</th>
                 </tr>
@@ -166,6 +181,9 @@
                         </td>
                         <td>
                             <span class="badge-duration">{{ entry.total_duration|default:"0" }}</span>
+                        </td>
+                        <td class="fw-bold text-dark text-nowrap">
+                            {{ entry.formatted_fee }} <span class="small text-muted fw-normal">تومان</span>
                         </td>
                         <td class="text-muted small text-truncate" style="max-width: 200px;" title="{{ entry.description|default:'' }}">
                             {{ entry.description|default:"-" }}
@@ -186,7 +204,7 @@
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="7">
+                        <td colspan="8">
                             <div class="empty-state">
                                 <div class="empty-state-icon">
                                     <i class="fa-regular fa-folder-open"></i>
@@ -201,8 +219,9 @@
             {% if daily_report %}
                 <tfoot class="bg-light border-top">
                     <tr class="fw-bold">
-                        <td colspan="4" class="text-end pe-4 py-3">جمع کل ساعات کاری محاسبه‌شده:</td>
+                        <td colspan="4" class="text-end pe-4 py-3">جمع کل کارکرد و مبلغ:</td>
                         <td class="ltr py-3 text-success fs-6">{{ total_hours|floatformat:"-2" }} ساعت</td>
+                        <td class="py-3 text-primary fs-6">{{ formatted_total_fee }} تومان</td>
                         <td colspan="2"></td>
                     </tr>
                 </tfoot>

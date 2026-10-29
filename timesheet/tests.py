@@ -228,6 +228,64 @@ class TimeEntryManualAndCrudTests(TestCase):
         self.assertTrue(ws.views.sheetView[0].rightToLeft)
         # بررسی وجود عنوان گزارش در سلول A1
         self.assertEqual(ws['A1'].value, 'گزارش ساعات کاری و سوابق کارکرد')
+        # بررسی وجود ستون مبلغ و مقادیر محاسبه‌شده
+        self.assertEqual(ws.cell(row=4, column=7).value, 'مبلغ (تومان)')
+        # ۳ ساعت با نرخ ۴۰۰,۰۰۰ تومان = ۱,۲۰۰,۰۰۰ تومان
+        self.assertEqual(ws.cell(row=5, column=7).value, 1200000)
+        # سلول جمع کل مبلغ در ردیف پایانی
+        self.assertEqual(ws.cell(row=6, column=7).value, 1200000)
+
+    def test_report_page_fee_column_and_total(self):
+        """صفحه گزارش باید ستون مبلغ و جمع کل مبلغ به تومان را نمایش دهد"""
+        start = jdatetime.datetime(1405, 8, 1, 8, 0)
+        end = jdatetime.datetime(1405, 8, 1, 10, 0)
+        # رکورد اول برای پروژه دارای نرخ ۴۰۰,۰۰۰ تومان (۲ ساعت = ۸۰۰,۰۰۰ تومان)
+        TimeEntry.objects.create(
+            user=self.user,
+            project=self.project,
+            entry_time=start,
+            exit_time=end,
+            description='کار با نرخ مشخص'
+        )
+        # پروژه بدون نرخ پایه (unit_price=None)
+        no_price_project = Project.objects.create(name='پروژه بدون نرخ', user=self.user, unit_price=None)
+        TimeEntry.objects.create(
+            user=self.user,
+            project=no_price_project,
+            entry_time=start + jdatetime.timedelta(hours=3),
+            exit_time=end + jdatetime.timedelta(hours=3),
+            description='کار بدون نرخ'
+        )
+
+        url = f"{reverse('report')}?start=1405-08-01&end=1405-08-05"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        # وجود هدر ستون مبلغ
+        self.assertContains(response, 'مبلغ (تومان)')
+        # مبلغ رکورد اول
+        self.assertContains(response, '800,000')
+        # مبلغ رکورد دوم بدون نرخ باید ۰ تومان باشد
+        self.assertContains(response, '0 <span class="small text-muted fw-normal">تومان</span>')
+        # جمع کل مبلغ (۸۰۰,۰۰۰ تومان) در پاورقی و کارت KPI
+        self.assertContains(response, 'جمع کل کارکرد و مبلغ:')
+        self.assertContains(response, '800,000 تومان')
+
+    def test_home_page_fee_column_and_total(self):
+        """صفحه اصلی باید ستون مبلغ و سطر جمع‌بندی را در جدول نمایش دهد"""
+        start = jdatetime.datetime.now() - jdatetime.timedelta(hours=2)
+        end = jdatetime.datetime.now()
+        TimeEntry.objects.create(
+            user=self.user,
+            project=self.project,
+            entry_time=start,
+            exit_time=end,
+            description='کار اخیر در صفحه اصلی'
+        )
+        response = self.client.get(reverse('home'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'مبلغ (تومان)')
+        self.assertContains(response, 'جمع کل سوابق اخیر:')
+        self.assertContains(response, 'تومان')
 
     def test_start_timer_creates_active_entry(self):
         """شروع تایمر باید یک رکورد با exit_time خالی ایجاد کند"""

@@ -53,6 +53,19 @@ class TimeEntry(BaseModel):
             return dur_string
         return None
 
+    @property
+    def fee(self):
+        """محاسبه مبلغ کارکرد به تومان بر اساس مدت زمان و نرخ ساعتی پروژه"""
+        if self.duration and self.project and self.project.unit_price:
+            hours = self.duration.total_seconds() / 3600
+            return round(hours * self.project.unit_price)
+        return 0
+
+    @property
+    def formatted_fee(self):
+        """نمایش مبلغ با جداکننده هزارگان به تومان"""
+        return f"{self.fee:,}"
+
     class Meta:
         verbose_name = _("Time Entry")
         verbose_name_plural = _("Time Entries")
