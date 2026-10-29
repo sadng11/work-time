@@ -13,7 +13,10 @@ class JDateTimeInput(DateTimeBaseInput):
         if value:
             if hasattr(value, 'strftime'):
                 return value.strftime('%Y-%m-%d %H:%M')
-            return str(value)
+            val_str = str(value)
+            if '.' in val_str:
+                val_str = val_str.split('.')[0]
+            return val_str
         return ''
 
 

@@ -29,6 +29,10 @@ class TimeEntry(BaseModel):
     description = models.TextField(null=True, blank=True, verbose_name=_("Description"))
 
     def save(self, *args, **kwargs):
+        if self.entry_time and hasattr(self.entry_time, 'microsecond') and self.entry_time.microsecond:
+            self.entry_time = self.entry_time.replace(microsecond=0)
+        if self.exit_time and hasattr(self.exit_time, 'microsecond') and self.exit_time.microsecond:
+            self.exit_time = self.exit_time.replace(microsecond=0)
         if self.exit_time and self.entry_time:
             self.duration = self.exit_time - self.entry_time
         super().save(*args, **kwargs)

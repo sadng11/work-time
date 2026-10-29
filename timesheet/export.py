@@ -95,7 +95,7 @@ def export_daily_report_to_excel(daily_report, total_hours, start=None, end=None
         entry_time = entry.get("entry_time")
         if entry_time:
             if hasattr(entry_time, "strftime"):
-                entry_time_str = entry_time.strftime("%Y-%m-%d %H:%M")
+                entry_time_str = entry_time.strftime("%Y-%m-%d %H:%M:%S")
             else:
                 entry_time_str = str(entry_time)
         else:

@@ -241,6 +241,7 @@ class TimeEntryManualAndCrudTests(TestCase):
         self.assertIsNotNone(active)
         self.assertEqual(active.project, self.project)
         self.assertEqual(active.description, 'تست شروع تایمر زنده')
+        self.assertEqual(active.entry_time.microsecond, 0)
 
     def test_start_timer_auto_stops_previous_active_timer(self):
         """شروع تایمر روی پروژه جدید باید تایمر فعال قبلی را به طور خودکار متوقف و ثبت کند"""
@@ -275,8 +276,28 @@ class TimeEntryManualAndCrudTests(TestCase):
 
         entry.refresh_from_db()
         self.assertIsNotNone(entry.exit_time)
+        self.assertEqual(entry.exit_time.microsecond, 0)
         self.assertIsNotNone(entry.duration)
         self.assertGreaterEqual(entry.duration.total_seconds(), 1700)
+
+    def test_timer_datetime_has_no_microseconds_in_db_and_templates(self):
+        """زمان‌های ثبت شده نباید دارای اعشار/میکروثانیه بعد از ثانیه باشند و در فرمت YYYY-MM-DD HH:MM:SS نمایش یابند"""
+        now = jdatetime.datetime.now()
+        entry = TimeEntry.objects.create(
+            user=self.user,
+            project=self.project,
+            entry_time=now,
+            exit_time=now + jdatetime.timedelta(hours=1),
+        )
+        self.assertEqual(entry.entry_time.microsecond, 0)
+        self.assertEqual(entry.exit_time.microsecond, 0)
+
+        response = self.client.get(reverse('home'))
+        self.assertEqual(response.status_code, 200)
+        formatted_entry = entry.entry_time.strftime('%Y-%m-%d %H:%M:%S')
+        formatted_exit = entry.exit_time.strftime('%Y-%m-%d %H:%M:%S')
+        self.assertContains(response, formatted_entry)
+        self.assertContains(response, formatted_exit)
 
     def test_home_page_displays_active_live_timer(self):
         """صفحه اصلی در صورت وجود تایمر باز باید ویجت فعال و زمان را نمایش دهد"""

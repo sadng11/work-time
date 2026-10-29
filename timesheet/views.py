@@ -89,7 +89,7 @@ def start_timer(request):
 
         # در صورت وجود تایمر فعال قبلی، آن را هوشمندانه می‌بندیم
         previous_active = TimeEntry.objects.filter(user=request.user, exit_time__isnull=True).first()
-        now = jdatetime.datetime.now()
+        now = jdatetime.datetime.now().replace(microsecond=0)
         if previous_active:
             previous_active.exit_time = now
             previous_active.save()
@@ -113,7 +113,7 @@ def stop_timer(request):
     if request.method == 'POST':
         active = TimeEntry.objects.filter(user=request.user, exit_time__isnull=True).order_by('-entry_time').first()
         if active:
-            active.exit_time = jdatetime.datetime.now()
+            active.exit_time = jdatetime.datetime.now().replace(microsecond=0)
             new_desc = request.POST.get('description', '').strip()
             if new_desc:
                 active.description = new_desc

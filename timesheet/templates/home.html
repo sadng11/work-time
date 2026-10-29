@@ -329,10 +329,10 @@
                             <i class="fa-solid fa-folder text-muted me-1 small"></i>
                             {{ entry.project.name }}
                         </td>
-                        <td class="ltr text-muted small">{{ entry.entry_time }}</td>
+                        <td class="ltr text-muted small">{{ entry.entry_time|date:"Y-m-d H:i:s" }}</td>
                         <td class="ltr">
                             {% if entry.exit_time %}
-                                <span class="text-muted small">{{ entry.exit_time }}</span>
+                                <span class="text-muted small">{{ entry.exit_time|date:"Y-m-d H:i:s" }}</span>
                             {% else %}
                                 <span class="badge-status running">
                                     <span class="pulse-indicator"></span>
