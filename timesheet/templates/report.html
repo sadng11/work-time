@@ -3,6 +3,42 @@
 
 {% block title %}گزارش و فیلتر ساعت کاری | سامانه ساعت کاری{% endblock %}
 
+{% block extra_style %}
+<style>
+    .kpi-card {
+        padding: 0.75rem 0.85rem !important;
+        gap: 0.65rem !important;
+        min-height: 72px !important;
+    }
+    .kpi-icon {
+        width: 38px !important;
+        height: 38px !important;
+        font-size: 1.1rem !important;
+    }
+    .kpi-title {
+        font-size: 0.74rem !important;
+        margin-bottom: 0.2rem !important;
+    }
+    .kpi-value {
+        font-size: 1rem !important;
+    }
+    .kpi-date-range {
+        font-size: 0.76rem !important;
+        font-weight: 700 !important;
+        letter-spacing: -0.3px !important;
+        white-space: nowrap !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 0.2rem !important;
+    }
+    .kpi-date-badge {
+        display: inline-block;
+        direction: ltr;
+        font-variant-numeric: tabular-nums;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <!-- هدر صفحه گزارش -->
 <div class="row align-items-center mb-4">
@@ -74,60 +110,64 @@
 
 <!-- ردیف کارت خلاصه آماری مجموع ساعات و مبالغ -->
 <div class="row g-3 mb-4">
-    <div class="col-md-3">
+    <div class="col-xl-3 col-sm-6">
         <div class="kpi-card" style="border-right: 4px solid var(--color-primary);">
             <div class="kpi-icon primary">
                 <i class="fa-solid fa-hourglass-half"></i>
             </div>
-            <div>
-                <div class="kpi-title">مجموع ساعت کاری فیلترشده</div>
-                <div class="kpi-value text-success ltr text-end">
-                    {{ total_hours|floatformat:"-2" }} <span class="fs-6 fw-normal text-muted">ساعت</span>
+            <div class="flex-grow-1 min-w-0">
+                <div class="kpi-title text-truncate" title="مجموع ساعت کاری فیلترشده">مجموع ساعت کاری فیلترشده</div>
+                <div class="kpi-value text-success text-nowrap">
+                    <span>{{ total_hours|floatformat:"-2" }}</span>
+                    <span class="small fw-normal text-muted ms-1">ساعت</span>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="col-md-3">
+    <div class="col-xl-3 col-sm-6">
         <div class="kpi-card" style="border-right: 4px solid #059669;">
             <div class="kpi-icon primary" style="background-color: #d1fae5; color: #059669;">
                 <i class="fa-solid fa-coins"></i>
             </div>
-            <div>
-                <div class="kpi-title">مجموع مبلغ محاسبه‌شده</div>
-                <div class="kpi-value text-primary fs-6 text-end">
-                    {{ formatted_total_fee }} <span class="fs-6 fw-normal text-muted">تومان</span>
+            <div class="flex-grow-1 min-w-0">
+                <div class="kpi-title text-truncate" title="مجموع مبلغ محاسبه‌شده">مجموع مبلغ محاسبه‌شده</div>
+                <div class="kpi-value text-primary text-nowrap">
+                    <span>{{ formatted_total_fee }}</span>
+                    <span class="small fw-normal text-muted ms-1">تومان</span>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="col-md-3">
+    <div class="col-xl-3 col-sm-6">
         <div class="kpi-card">
             <div class="kpi-icon info">
                 <i class="fa-solid fa-briefcase"></i>
             </div>
-            <div>
-                <div class="kpi-title">پروژه مورد گزارش</div>
-                <div class="kpi-value fs-6 text-truncate" style="max-width: 220px;" title="{% if project %}{{ project.name }}{% else %}همه پروژه‌ها{% endif %}">
+            <div class="flex-grow-1 min-w-0">
+                <div class="kpi-title text-truncate" title="پروژه مورد گزارش">پروژه مورد گزارش</div>
+                <div class="kpi-value text-truncate" title="{% if project %}{{ project.name }}{% else %}همه پروژه‌ها{% endif %}">
                     {% if project %}{{ project.name }}{% else %}همه پروژه‌ها{% endif %}
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="col-md-3">
+    <div class="col-xl-3 col-sm-6">
         <div class="kpi-card">
             <div class="kpi-icon warning">
                 <i class="fa-regular fa-calendar-days"></i>
             </div>
-            <div>
-                <div class="kpi-title">بازه زمانی فعال</div>
-                <div class="kpi-value fs-6 ltr text-end">
+            <div class="flex-grow-1 min-w-0">
+                <div class="kpi-title text-truncate" title="بازه زمانی فعال">بازه زمانی فعال</div>
+                <div class="kpi-value kpi-date-range text-nowrap" title="{% if start and end %}{{ start }} تا {{ end }}{% else %}کل سوابق ثبت‌شده{% endif %}">
                     {% if start and end %}
-                        {{ start }} <span class="text-muted fw-normal">تا</span> {{ end }}
+                        <span class="kpi-date-badge">{{ start }}</span>
+                        <span class="text-muted fw-normal mx-1 small">تا</span>
+                        <span class="kpi-date-badge">{{ end }}</span>
                     {% else %}
-                        <span class="text-muted fs-6 fw-normal">کل سوابق ثبت‌شده</span>
+                        <span class="text-muted small fw-normal">کل سوابق ثبت‌شده</span>
                     {% endif %}
                 </div>
             </div>
@@ -160,26 +200,26 @@
             <thead>
                 <tr>
                     <th style="width: 50px;">#</th>
-                    <th style="width: 70px;">شناسه</th>
-                    <th>تاریخ و ساعت ورود</th>
-                    <th>پروژه</th>
-                    <th>مدت کارکرد (ساعت)</th>
-                    <th>مبلغ (تومان)</th>
+                    <th style="width: 70px;" class="text-nowrap">شناسه</th>
+                    <th class="text-nowrap">تاریخ و ساعت ورود</th>
+                    <th class="text-nowrap">پروژه</th>
+                    <th class="text-nowrap">مدت کارکرد (ساعت)</th>
+                    <th class="text-nowrap">مبلغ (تومان)</th>
                     <th>توضیحات</th>
-                    <th style="width: 120px;">عملیات</th>
+                    <th style="width: 120px;" class="text-nowrap">عملیات</th>
                 </tr>
             </thead>
             <tbody>
                 {% for entry in daily_report %}
                     <tr>
                         <td class="text-muted small">{{ forloop.counter }}</td>
-                        <td class="text-muted small ltr">#{{ entry.id }}</td>
-                        <td class="ltr text-muted small">{{ entry.entry_time|date:'Y-m-d H:i:s' }}</td>
-                        <td class="fw-bold text-dark">
+                        <td class="text-muted small ltr text-nowrap">#{{ entry.id }}</td>
+                        <td class="ltr text-muted small text-nowrap">{{ entry.entry_time|date:'Y-m-d H:i:s' }}</td>
+                        <td class="fw-bold text-dark text-nowrap">
                             <i class="fa-solid fa-folder text-muted me-1 small"></i>
                             {{ entry.project__name|default:"-" }}
                         </td>
-                        <td>
+                        <td class="text-nowrap">
                             <span class="badge-duration">{{ entry.total_duration|default:"0" }}</span>
                         </td>
                         <td class="fw-bold text-dark text-nowrap">
@@ -188,7 +228,7 @@
                         <td class="text-muted small text-truncate" style="max-width: 200px;" title="{{ entry.description|default:'' }}">
                             {{ entry.description|default:"-" }}
                         </td>
-                        <td>
+                        <td class="text-nowrap">
                             <div class="d-inline-flex align-items-center gap-1" role="group">
                                 <a href="{% url 'edit_time_entry' entry.id %}" class="btn-action-icon btn-edit" title="ویرایش">
                                     <i class="fa-solid fa-pen"></i>
@@ -219,9 +259,9 @@
             {% if daily_report %}
                 <tfoot class="bg-light border-top">
                     <tr class="fw-bold">
-                        <td colspan="4" class="text-end pe-4 py-3">جمع کل کارکرد و مبلغ:</td>
-                        <td class="ltr py-3 text-success fs-6">{{ total_hours|floatformat:"-2" }} ساعت</td>
-                        <td class="py-3 text-primary fs-6">{{ formatted_total_fee }} تومان</td>
+                        <td colspan="4" class="text-end pe-4 py-3 text-nowrap">جمع کل کارکرد و مبلغ:</td>
+                        <td class="py-3 text-success fs-6 text-nowrap">{{ total_hours|floatformat:"-2" }} ساعت</td>
+                        <td class="py-3 text-primary fs-6 text-nowrap">{{ formatted_total_fee }} تومان</td>
                         <td colspan="2"></td>
                     </tr>
                 </tfoot>

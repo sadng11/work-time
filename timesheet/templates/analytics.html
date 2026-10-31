@@ -33,12 +33,12 @@
             <div class="kpi-icon primary">
                 <i class="fa-solid fa-hourglass-half"></i>
             </div>
-            <div>
-                <div class="kpi-title">مجموع کارکرد ماه ({{ current_month_name }})</div>
-                <div class="kpi-value text-success ltr text-end">
-                    {{ kpi.total_month_hours }} <span class="fs-6 fw-normal text-muted">ساعت</span>
+            <div class="flex-grow-1 min-w-0">
+                <div class="kpi-title text-truncate" title="مجموع کارکرد ماه ({{ current_month_name }})">مجموع کارکرد ماه ({{ current_month_name }})</div>
+                <div class="kpi-value text-success text-nowrap">
+                    <span>{{ kpi.total_month_hours }}</span> <span class="fs-6 fw-normal text-muted ms-1">ساعت</span>
                 </div>
-                <div class="text-muted small mt-1">در {{ kpi.active_work_days }} روز کاری فعال</div>
+                <div class="text-muted small mt-1 text-truncate">در {{ kpi.active_work_days }} روز کاری فعال</div>
             </div>
         </div>
     </div>
@@ -49,12 +49,12 @@
             <div class="kpi-icon info">
                 <i class="fa-solid fa-business-time"></i>
             </div>
-            <div>
-                <div class="kpi-title">میانگین روزانه در روزهای کاری</div>
-                <div class="kpi-value text-info ltr text-end">
-                    {{ kpi.daily_avg_hours }} <span class="fs-6 fw-normal text-muted">ساعت / روز</span>
+            <div class="flex-grow-1 min-w-0">
+                <div class="kpi-title text-truncate" title="میانگین روزانه در روزهای کاری">میانگین روزانه در روزهای کاری</div>
+                <div class="kpi-value text-info text-nowrap">
+                    <span>{{ kpi.daily_avg_hours }}</span> <span class="fs-6 fw-normal text-muted ms-1">ساعت / روز</span>
                 </div>
-                <div class="text-muted small mt-1">محاسبه در روزهای با ثبت کار</div>
+                <div class="text-muted small mt-1 text-truncate">محاسبه در روزهای با ثبت کار</div>
             </div>
         </div>
     </div>
